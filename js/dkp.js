@@ -189,10 +189,6 @@ let resultsGridApi = null;
       columnDefs: powerRangeColumnDefs,
       rowData: powerRanges,
       rowHeight: 42,
-      autoSizeStrategy: {
-        type: "fitGridWidth",
-        defaultMinWidth: 100,
-      },
       defaultColDef: {
         resizable: true,
         sortable: true,
