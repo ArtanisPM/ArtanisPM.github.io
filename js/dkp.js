@@ -188,18 +188,11 @@ let resultsGridApi = null;
       theme: agGrid.themeQuartz,
       columnDefs: powerRangeColumnDefs,
       rowData: powerRanges,
-	  enableCellTextSelection: true,
-	  ensureDomOrder: true,
-	  defaultColDef: {
-	    sortable: true,
-	    filter: false,
-	    resizable: true,
-	  },
-	  tooltipShowDelay: 300,
-	  pagination: false,
-	  animateRows: false,
-	  rowBuffer: 20,
-	  suppressRowTransform: true,
+      rowHeight: 42,
+      defaultColDef: {
+        resizable: true,
+        sortable: true,
+      },
       onCellClicked: async (event) => {
         const row = event.data;
         const idx = powerRanges.indexOf(row);
