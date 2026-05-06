@@ -123,7 +123,6 @@
               <span class="eq-save-status" id="saveStatus"></span>
             </div>
           </div>
-
         </div>
       </section>
 
@@ -146,6 +145,12 @@
 			<button class="eq-section-tab" data-tab="armaments">
 			  ⚔️ Armaments
 			</button>
+          <button class="eq-section-tab" data-tab="farmImport">
+            Farm Accounts
+          </button>
+          <button class="eq-section-tab" data-tab="kvkImport">
+            KvK Import
+          </button>
         </div>
 
         <div id="equipmentPanel">
@@ -171,6 +176,56 @@
 		<div id="armamentsPanel" style="display:none;">
 		  <div class="eq-arm-grid" id="armGrid"></div>
 		</div>
+
+        <div id="farmImportPanel" style="display:none;">
+          <div class="eq-import-panel">
+            <div class="eq-import-head">
+              <div>
+                <h2>Farm Accounts Import</h2>
+                <p>Imports every worksheet into <code>farm_accounts</code>. Expected columns: ID, Name, Power, Killpoints, Deads, CH, acc_type, main_id.</p>
+              </div>
+              <button class="eq-import-btn primary" id="farmImportBtn" disabled>Import Farms</button>
+            </div>
+            <div class="eq-import-grid">
+              <label class="eq-import-file">
+                <span>Farm Excel File</span>
+                <input type="file" id="farmFileInput" accept=".xlsx,.xls">
+              </label>
+              <div class="eq-import-status" id="farmImportStatus">Load a database, then choose a farm Excel file.</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="kvkImportPanel" style="display:none;">
+          <div class="eq-import-panel">
+            <div class="eq-import-head">
+              <div>
+                <h2>KvK Import</h2>
+                <p>Imports all sheets as snapshots into <code>kvks</code>, <code>snapshots</code>, <code>governors</code>, and <code>stats</code>.</p>
+              </div>
+              <button class="eq-import-btn primary" id="kvkImportBtn" disabled>Import KvK</button>
+            </div>
+            <div class="eq-import-grid eq-import-grid--kvk">
+              <label class="eq-import-field">
+                <span>Kingdom</span>
+                <input type="text" id="kvkKingdomInput" class="eq-input" placeholder="2552">
+              </label>
+              <label class="eq-import-field">
+                <span>KvK Number</span>
+                <input type="number" id="kvkNumberInput" class="eq-input" min="1" placeholder="1">
+              </label>
+              <label class="eq-import-field">
+                <span>Name</span>
+                <input type="text" id="kvkNameInput" class="eq-input" placeholder="KvK">
+              </label>
+              <label class="eq-import-file">
+                <span>KvK Excel File</span>
+                <input type="file" id="kvkFileInput" accept=".xlsx,.xls">
+              </label>
+              <div class="eq-import-status" id="kvkImportStatus">Load a database, then choose a KvK Excel file.</div>
+            </div>
+          </div>
+        </div>
       </section>
 
     </div>
@@ -364,6 +419,7 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="js/equipment.js"></script>
 </body>
 </html>
