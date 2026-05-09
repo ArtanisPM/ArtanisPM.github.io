@@ -227,9 +227,12 @@ let resultsGridApi = null;
     const maxv =
       maxRaw === ""
         ? null
-        : Number.isInteger(Number(maxRaw))
+        : /^-?\d+$/.test(maxRaw)
           ? parseInt(maxRaw, 10)
           : null;
+    if (maxRaw !== "" && maxv === null) {
+      return alert("Max power must be an integer or left empty.");
+    }
     if (maxv !== null && maxv < minv) {
       return alert("Max power must be greater than or equal to Min power.");
     }
