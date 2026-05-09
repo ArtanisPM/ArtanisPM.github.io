@@ -1,10 +1,20 @@
 function getKDFromURL() {
   const params = new URLSearchParams(window.location.search);
-  return params.get("kd");
+  return normalizeNumericId(params.get("kd"));
 }
 function getSelectedSource() {
   const kd = getKDFromURL();
   if (!kd) return null;
+  return kd;
+}
+
+function normalizeNumericId(value) {
+  const id = String(value ?? "").trim();
+  return /^\d+$/.test(id) ? id : null;
+}
+
+function buildNumericInList(values) {
+  return [...new Set(values.map(normalizeNumericId).filter(Boolean))].join(",");
 }
 
 let db;
@@ -12,7 +22,7 @@ let db;
 async function loadDatabase() {
   const SQL = await initSqlJs({
     locateFile: (file) =>
-      `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/${file}`,
+      `https://cdn.jsdelivr.net/npm/sql.js@1.14.1/dist/${file}`,
   });
 
   const res = await fetch("kvk.db");
@@ -26,6 +36,10 @@ async function loadAllSheetsCache() {
   await loadDatabase();
 
   const kd = getKDFromURL();
+  if (!kd) {
+    alert("Invalid or missing kingdom ID");
+    return;
+  }
 
   const kvk = db.exec(`
 	  SELECT id
@@ -720,6 +734,8 @@ function toggleSection(id) {
 
 function loadGovHistory(govId) {
   const kd = getKDFromURL();
+  const safeGovId = normalizeNumericId(govId);
+  if (!kd || !safeGovId) return [];
 
   const kvksRes = db.exec(`
     SELECT id, kvk_number
@@ -743,7 +759,7 @@ function loadGovHistory(govId) {
       SELECT s.power_diff, s.kp_diff, s.t4_diff, s.t5_diff,
              s.deads_diff, s.dkp, s.dkp_percent, s.acclaim
       FROM stats s
-      WHERE s.snapshot_id=${snapId} AND s.governor_id='${govId}'
+      WHERE s.snapshot_id=${snapId} AND s.governor_id='${safeGovId}'
     `);
     if (!statsRes.length) continue;
 
@@ -763,9 +779,11 @@ function loadGovHistory(govId) {
   return results;
 }
 function loadFarmKvKStats(farmIds) {
-  if (!farmIds.length) return [];
+  const idList = buildNumericInList(farmIds);
+  if (!idList) return [];
 
   const kd = getKDFromURL();
+  if (!kd) return [];
 
   const kvksRes = db.exec(`
     SELECT id, kvk_number
@@ -777,7 +795,6 @@ function loadFarmKvKStats(farmIds) {
   if (!kvksRes.length) return [];
 
   const results = [];
-  const idList = farmIds.join(",");
 
   for (const [kvkId, kvkNumber] of kvksRes[0].values) {
     const snapRes = db.exec(`
@@ -832,10 +849,13 @@ function loadFarmKvKStats(farmIds) {
   return results;
 }
 function loadGovernorFarms(govId) {
+  const safeGovId = normalizeNumericId(govId);
+  if (!safeGovId) return [];
+
   const res = db.exec(`
     SELECT name, player_id, power, killpoints, deads, ch
     FROM farm_accounts
-    WHERE main_id='${govId}'
+    WHERE main_id='${safeGovId}'
     ORDER BY power DESC
   `);
 
@@ -950,10 +970,13 @@ const ARM_SLOTS = [
 ];
 
 function loadGovernorEquipment(govId) {
+  const safeGovId = normalizeNumericId(govId);
+  if (!safeGovId) return null;
+
   try {
     const t = db.exec(`SELECT name FROM sqlite_master WHERE type='table' AND name='equipment'`);
     if (!t.length || !t[0].values.length) return null;
-    const res = db.exec(`SELECT * FROM equipment WHERE player_id=${Number(govId)} LIMIT 1`);
+    const res = db.exec(`SELECT * FROM equipment WHERE player_id=${safeGovId} LIMIT 1`);
     if (!res.length || !res[0].values.length) return null;
     const row = {};
     res[0].columns.forEach((c, i) => { row[c] = res[0].values[0][i]; });
@@ -962,10 +985,13 @@ function loadGovernorEquipment(govId) {
 }
 
 function loadGovernorArmaments(govId) {
+  const safeGovId = normalizeNumericId(govId);
+  if (!safeGovId) return null;
+
   try {
     const t = db.exec(`SELECT name FROM sqlite_master WHERE type='table' AND name='armaments'`);
     if (!t.length || !t[0].values.length) return null;
-    const res = db.exec(`SELECT * FROM armaments WHERE player_id=${Number(govId)} LIMIT 1`);
+    const res = db.exec(`SELECT * FROM armaments WHERE player_id=${safeGovId} LIMIT 1`);
     if (!res.length || !res[0].values.length) return null;
     const row = {};
     res[0].columns.forEach((c, i) => { row[c] = res[0].values[0][i]; });
@@ -1215,6 +1241,17 @@ function openGovModal(govId, govName) {
   const overlay = document.getElementById("govModalOverlay");
   const body = document.getElementById("govModalBody");
   const subtitle = document.getElementById("govModalSubtitle");
+  const safeGovId = normalizeNumericId(govId);
+
+  if (!safeGovId) {
+    subtitle.textContent = "";
+    body.innerHTML = `<div class="gov-modal-empty">Invalid governor ID.</div>`;
+    overlay.classList.add("open");
+    document.body.style.overflow = "hidden";
+    return;
+  }
+
+  govId = safeGovId;
 
   subtitle.textContent = govName ? `— ${govName} (${govId})` : `— ID: ${govId}`;
   body.innerHTML = `<div class="gov-modal-loading"><div class="spinner"></div><span>Loading…</span></div>`;
@@ -1268,7 +1305,9 @@ function loadAllFarmsGrouped() {
   if (!mainsRes.length) return [];
 
   return mainsRes[0].values.map(m => {
-    const mainId = m[0];
+    const mainId = normalizeNumericId(m[0]);
+    if (!mainId) return null;
+
     const farmsRes = db.exec(`
       SELECT player_id, name, power, killpoints, deads, ch
       FROM farm_accounts
@@ -1282,7 +1321,7 @@ function loadAllFarmsGrouped() {
       main: { id: mainId, name: m[1], power: m[2], killpoints: m[3], deads: m[4], ch: m[5] },
       farms
     };
-  });
+  }).filter(Boolean);
 }
 
 function renderFarmsOverviewModal() {
