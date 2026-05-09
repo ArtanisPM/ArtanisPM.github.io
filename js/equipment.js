@@ -30,10 +30,16 @@ let pickerTarget       = null;
 let pickerSelectedItem = "";
 let allIconNames       = [];
 let allCommNames       = [];
+
+function normalizeNumericId(value) {
+  const id = String(value ?? "").trim();
+  return /^\d+$/.test(id) ? id : null;
+}
+
 (async () => {
   try {
     SQL = await initSqlJs({
-      locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/${f}`,
+      locateFile: f => `https://cdn.jsdelivr.net/npm/sql.js@1.14.1/dist/${f}`,
     });
   } catch (e) { console.error("sql.js init failed:", e); }
   await loadIconManifest();
@@ -460,11 +466,13 @@ let armamentsRow = null;
 
 function loadArmaments(govId) {
   armamentsRow = null;
+  const safeGovId = normalizeNumericId(govId);
   if (!db) return;
+  if (!safeGovId) return;
   try {
     const t = db.exec(`SELECT name FROM sqlite_master WHERE type='table' AND name='armaments'`);
     if (!t.length || !t[0].values.length) return;
-    const res = db.exec(`SELECT * FROM armaments WHERE player_id=${Number(govId)} LIMIT 1`);
+    const res = db.exec(`SELECT * FROM armaments WHERE player_id=${safeGovId} LIMIT 1`);
     if (!res.length || !res[0].values.length) return;
     const row = {};
     res[0].columns.forEach((c, i) => { row[c] = res[0].values[0][i]; });
@@ -481,13 +489,18 @@ function isArmEmpty(v) {
 
 function loadGovernor() {
   const rawId = govIdInput.value.trim();
-  if (!rawId || !db) return;
+  const safeGovId = normalizeNumericId(rawId);
+  if (!db) return;
+  if (!safeGovId) {
+    showSaveStatus("Enter a numeric Governor ID first.", "err");
+    return;
+  }
 
   clearAllData();
   setGovBadge("");
 
   try {
-    const res = db.exec(`SELECT name FROM governors WHERE governor_id='${rawId}' LIMIT 1`);
+    const res = db.exec("SELECT name FROM governors WHERE governor_id = ? LIMIT 1", [safeGovId]);
     if (res.length && res[0].values.length)
       govNameInput.value = res[0].values[0][0] ?? "";
   } catch (e) { /* ok */ }
@@ -495,7 +508,7 @@ function loadGovernor() {
   try {
     const tbl = db.exec(`SELECT name FROM sqlite_master WHERE type='table' AND name='equipment'`);
     if (tbl.length && tbl[0].values.length) {
-      const eqRes = db.exec(`SELECT * FROM equipment WHERE player_id=${Number(rawId)} LIMIT 1`);
+      const eqRes = db.exec(`SELECT * FROM equipment WHERE player_id=${safeGovId} LIMIT 1`);
       if (eqRes.length && eqRes[0].values.length) {
         const row = zipRow(eqRes[0]);
         populateMarchData(row);
@@ -510,7 +523,7 @@ function loadGovernor() {
 
   renderSlotGrid();
   renderPairsGrid();
-  loadArmaments(rawId);
+  loadArmaments(safeGovId);
 }
 const ARM_ABILITY_TIERS = (() => {
   const gold = new Set(["Destructive","Straight to the point","Invincible","Fearless","Hunter","Unstoppable","Balanced","Intrepid","Sharpshooter","Drilled","Merciless","Astute","Influential leader","Loaded","Civilized","Fixed","Cocoon","Inviolable","Crowned","Rounded","Rich","Battlements","Moneyed","Transporter","Enmeshed","Logistical","Unassailed","Winged","Irreproachable","Cautious","Shield Bash","Rock Solid","Avenger","Guarding light","Turn the corner","Panacea","Hasty Retreat","Blast Shield","Full Force","United Front","Thrasher","Butterfly effect","Steelskin","Flurry","Battle Ready","Fortified","Chokepoint","Steelheart","Vanquisher","Self Heal","Brilliant","Mountain","Toppler","Demolisher","Airtight","Thundering","Advantage advanced","Indomitable","Maneuver at ease","Horseback action"]);
@@ -627,9 +640,10 @@ saveBtn.addEventListener("click", saveGovernor);
 
 function saveGovernor() {
   if (!db) return;
-  const govId = Number(govIdInput.value.trim());
+  const safeGovId = normalizeNumericId(govIdInput.value);
   const name  = govNameInput.value.trim() || "none";
-  if (!govId) { showSaveStatus("Enter a Governor ID first.", "err"); return; }
+  if (!safeGovId) { showSaveStatus("Enter a numeric Governor ID first.", "err"); return; }
+  const govId = Number(safeGovId);
 
   try {
     ensureGovernorRow(govId, name);
