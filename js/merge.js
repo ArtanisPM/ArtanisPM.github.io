@@ -39,7 +39,10 @@ function buildColumnDefs(rows) {
       cellRenderer: (params) => {
         if (key.endsWith("Diff")) {
           const val = params.value;
-          return `<span style="color:${val >= 0 ? "green" : "red"}">${val}</span>`;
+          const span = document.createElement("span");
+          span.style.color = val >= 0 ? "green" : "red";
+          span.textContent = val ?? "";
+          return span;
         }
         return params.value ?? "";
       },
@@ -47,6 +50,16 @@ function buildColumnDefs(rows) {
   });
 }
 let gridApi = null;
+
+function fillSelect(selectEl, columns) {
+  selectEl.replaceChildren();
+  columns.forEach((col) => {
+    const option = document.createElement("option");
+    option.value = col;
+    option.textContent = col;
+    selectEl.appendChild(option);
+  });
+}
 
 function renderResultsAgGrid(rows) {
   const gridDiv = document.querySelector("#myGrid");
@@ -121,16 +134,14 @@ async function handleFiles() {
   if (!file1Data.length || !file2Data.length) return;
 
   const idSelect = document.getElementById("idColumn");
+  const sourceIdSelect = document.getElementById("sourceIdColumn");
   const mergeSelect = document.getElementById("mergeColumn");
-  idSelect.innerHTML = "";
-  mergeSelect.innerHTML = "";
+  const file1Columns = Object.keys(file1Data[0]);
+  const file2Columns = Object.keys(file2Data[0]);
 
-  Object.keys(file1Data[0]).forEach((col) => {
-    idSelect.innerHTML += `<option value="${col}">${col}</option>`;
-  });
-  Object.keys(file2Data[0]).forEach((col) => {
-    mergeSelect.innerHTML += `<option value="${col}">${col}</option>`;
-  });
+  fillSelect(idSelect, file1Columns);
+  fillSelect(sourceIdSelect, file2Columns);
+  fillSelect(mergeSelect, file2Columns);
 
   selectors.style.display = "block";
   document.getElementById("mergeBtn").disabled = false;
@@ -141,15 +152,16 @@ async function doMerge() {
   mergeBtn.disabled = true;
   try {
     const idColumn = document.getElementById("idColumn").value;
+    const sourceIdColumn = document.getElementById("sourceIdColumn").value;
     const mergeColumn = document.getElementById("mergeColumn").value;
 
-    if (!idColumn || !mergeColumn) return alert("Please select columns first.");
+    if (!idColumn || !sourceIdColumn || !mergeColumn) return alert("Please select columns first.");
 
     progressEl.value = 10;
 
     const map = new Map();
     for (const row of file2Data) {
-      const id = row[idColumn];
+      const id = row[sourceIdColumn];
       if (id == null) continue;
       map.set(id, row[mergeColumn]);
     }
@@ -177,7 +189,7 @@ async function doMerge() {
     renderResultsAgGrid(mergedResults);
 
     progressEl.value = 100;
-    resultsInfo.textContent = `Merged ${mergedResults.length} rows using ID "${idColumn}" and column "${mergeColumn}" from File 2.`;
+    resultsInfo.textContent = `Merged ${mergedResults.length} rows using File 1 ID "${idColumn}", File 2 ID "${sourceIdColumn}", and column "${mergeColumn}" from File 2.`;
     setExportEnabled(true);
   } finally {
     mergeBtn.disabled = false;
