@@ -28,6 +28,19 @@ async function loadDatabase() {
   const res = await fetch("kvk.db");
   const buffer = await res.arrayBuffer();
   db = new SQL.Database(new Uint8Array(buffer));
+  ensureDashboardSchema();
+}
+
+function ensureDashboardSchema() {
+  const cols = db.exec("PRAGMA table_info(stats)");
+  const existing = new Set(cols.length ? cols[0].values.map((r) => r[1]) : []);
+  [
+    ["sum_min_dkp", "INTEGER"],
+    ["sum_dkp", "INTEGER"],
+    ["sum_dkp_percent", "REAL"],
+  ].forEach(([name, type]) => {
+    if (!existing.has(name)) db.run(`ALTER TABLE stats ADD COLUMN ${name} ${type}`);
+  });
 }
 
 const SheetCache = {};
@@ -86,12 +99,17 @@ async function loadAllSheetsCache() {
       s.t5_diff,
       s.deads,
       s.deads_diff,
+      s.min_dkp,
       s.dkp,
       s.dkp_percent,
+      coalesce(s.sum_min_dkp, s.min_dkp) AS sum_min_dkp,
+      coalesce(s.sum_dkp, s.dkp) AS sum_dkp,
+      coalesce(s.sum_dkp_percent, s.dkp_percent) AS sum_dkp_percent,
       s.acclaim
     FROM stats s
     JOIN governors g ON g.governor_id=s.governor_id
     WHERE s.snapshot_id=${lastSnap}
+      AND upper(coalesce(s.vacation, 'NO')) != 'YES'
   `)[0];
 
   SheetCache.lastSheetData = {
@@ -130,14 +148,18 @@ const COL_table = {
   T4_DIFF: 7,
   T5_DIFF: 9,
   DEADS_DIFF: 11,
-  DKP: 12,
-  DKP_PERCENT: 13,
   T4: 6,
   T5: 8,
   KP: 4,
   DEADS: 10,
   POWER_DIFF: 3,
-  ACCLAIM: 14,
+  MIN_DKP: 12,
+  DKP: 13,
+  DKP_PERCENT: 14,
+  SUM_MIN_DKP: 15,
+  SUM_DKP: 16,
+  SUM_DKP_PERCENT: 17,
+  ACCLAIM: 18,
 };
 
 let gridApi;
@@ -156,10 +178,34 @@ function buildRowDataFromSheet(rows) {
     t5Diff: r[COL_table.T5_DIFF],
     deads: r[COL_table.DEADS],
     deadsDiff: r[COL_table.DEADS_DIFF],
+    minDkp: r[COL_table.MIN_DKP],
     dkp: r[COL_table.DKP],
     dkpPercent: r[COL_table.DKP_PERCENT],
+    sumMinDkp: r[COL_table.SUM_MIN_DKP],
+    sumDkp: r[COL_table.SUM_DKP],
+    sumDkpPercent: r[COL_table.SUM_DKP_PERCENT],
     acclaim: r[COL_table.ACCLAIM],
   }));
+}
+
+function formatNumber(value) {
+  return Number(value || 0).toLocaleString("en-US");
+}
+
+function formatPercent(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? `${(n * 100).toFixed(2)}%` : "";
+}
+
+function renderMetricStack(baseValue, sumValue, formatter) {
+  const base = formatter(baseValue);
+  const sum = formatter(sumValue);
+  return `
+    <div class="metric-stack">
+      <div class="metric-base">${base}</div>
+      <div class="metric-rollup">${sum}</div>
+    </div>
+  `;
 }
 
 const gridOptions = {
@@ -176,30 +222,37 @@ const gridOptions = {
 	    getQuickFilterText: () => "",
 	  },	  
     {
-      headerName: "ID",
-      field: "id",
-      sortable: false,
-      flex: 1,
-      minWidth: 100,
+      headerName: "Name",
+      field: "name",
+      flex: 1.25,
+      minWidth: 155,
       cellRenderer: (params) => {
-        if (!params.value) return "";
+        const id = params.data?.id;
+        const name = params.value || "";
+        const wrap = document.createElement("div");
+        wrap.classList.add("gov-name-stack");
+
+        const nameEl = document.createElement("div");
+        nameEl.classList.add("gov-name-value");
+        nameEl.textContent = name;
+        wrap.appendChild(nameEl);
+
+        if (!id) return wrap;
+
         const a = document.createElement("a");
-        a.textContent = params.value;
+        a.textContent = id;
         a.classList.add("gov-id");
         a.addEventListener("click", (e) => {
           e.preventDefault();
           e.stopPropagation();
-          openGovModal(String(params.value), params.data?.name || "");
+          openGovModal(String(id), name);
         });
-        return a;
-      },
-    },
+        wrap.appendChild(a);
 
-    {
-      headerName: "Name",
-      field: "name",
-      flex: 1,
-      minWidth: 130,
+        return wrap;
+      },
+      getQuickFilterText: (params) =>
+        `${params.data?.name || ""} ${params.data?.id || ""}`,
     },
 
     {
@@ -298,14 +351,28 @@ const gridOptions = {
       getQuickFilterText: () => "",
     },
     {
+      headerName: "Min DKP",
+      field: "minDkp",
+      getQuickFilterText: () => "",
+      flex: 1,
+      minWidth: 135,
+      cellClass: "metric-stack-cell",
+      tooltipValueGetter: () => "without farms\nwith farms",
+      cellRenderer: (p) =>
+        renderMetricStack(p.value, p.data?.sumMinDkp, formatNumber),
+    },
+    {
       headerName: "DKP",
       field: "dkp",
       sort: "desc",
       sortIndex: 0,
       getQuickFilterText: () => "",
       flex: 1,
-      minWidth: 100,
-      valueFormatter: (p) => Number(p.value || 0).toLocaleString("en-US"),
+      minWidth: 130,
+      cellClass: "metric-stack-cell",
+      tooltipValueGetter: () => "without farms\nwith farms",
+      cellRenderer: (p) =>
+        renderMetricStack(p.value, p.data?.sumDkp, formatNumber),
     },
     {
       headerName: "DKP %",
@@ -313,12 +380,11 @@ const gridOptions = {
       comparator: (a, b) => Number(a) - Number(b),
       getQuickFilterText: () => "",
       flex: 1,
-      minWidth: 100,
-      valueFormatter: (p) => {
-        const v = Number(p.value);
-        if (isNaN(v)) return "";
-        return (v * 100).toFixed(2) + "%";
-      },
+      minWidth: 120,
+      cellClass: "metric-stack-cell",
+      tooltipValueGetter: () => "without farms\nwith farms",
+      cellRenderer: (p) =>
+        renderMetricStack(p.value, p.data?.sumDkpPercent, formatPercent),
     },
     {
       headerName: "Acclaim",
@@ -340,6 +406,7 @@ const gridOptions = {
   tooltipShowDelay: 300,
   pagination: false,
   animateRows: true,
+  rowHeight: 60,
   rowBuffer: 20,
   suppressRowTransform: true,
 };
@@ -757,9 +824,15 @@ function loadGovHistory(govId) {
     const snapId = snapRes[0].values[0][0];
     const statsRes = db.exec(`
       SELECT s.power_diff, s.kp_diff, s.t4_diff, s.t5_diff,
-             s.deads_diff, s.dkp, s.dkp_percent, s.acclaim
+             s.deads_diff, s.min_dkp, s.dkp, s.dkp_percent,
+             coalesce(s.sum_min_dkp, s.min_dkp) AS sum_min_dkp,
+             coalesce(s.sum_dkp, s.dkp) AS sum_dkp,
+             coalesce(s.sum_dkp_percent, s.dkp_percent) AS sum_dkp_percent,
+             s.acclaim
       FROM stats s
-      WHERE s.snapshot_id=${snapId} AND s.governor_id='${safeGovId}'
+      WHERE s.snapshot_id=${snapId}
+        AND s.governor_id='${safeGovId}'
+        AND upper(coalesce(s.vacation, 'NO')) != 'YES'
     `);
     if (!statsRes.length) continue;
 
@@ -771,9 +844,13 @@ function loadGovHistory(govId) {
       t4Diff: r[2],
       t5Diff: r[3],
       deadsDiff: r[4],
-      dkp: r[5],
-      dkpPercent: r[6],
-      acclaim: r[7],
+      minDkp: r[5],
+      dkp: r[6],
+      dkpPercent: r[7],
+      sumMinDkp: r[8],
+      sumDkp: r[9],
+      sumDkpPercent: r[10],
+      acclaim: r[11],
     });
   }
   return results;
@@ -824,6 +901,7 @@ function loadFarmKvKStats(farmIds) {
       JOIN governors g ON g.governor_id = s.governor_id
       WHERE s.snapshot_id=${snapId}
         AND CAST(s.governor_id AS INTEGER) IN (${idList})
+        AND upper(coalesce(s.vacation, 'NO')) != 'YES'
       ORDER BY s.dkp DESC
     `);
 
@@ -888,6 +966,7 @@ function renderModalTable(rows) {
     "T4",
     "T5",
     "Deads",
+    "Min DKP",
     "DKP",
     "DKP %",
     "Acclaim",
@@ -903,8 +982,9 @@ function renderModalTable(rows) {
       <td>${_fmtDiff(r.t4Diff)}</td>
       <td>${_fmtDiff(r.t5Diff)}</td>
       <td>${_fmtDiff(r.deadsDiff)}</td>
-      <td>${Number(r.dkp || 0).toLocaleString("en-US")}</td>
-      <td>${isNaN(Number(r.dkpPercent)) ? "" : (Number(r.dkpPercent) * 100).toFixed(2) + "%"}</td>
+      <td>${renderMetricStack(r.minDkp, r.sumMinDkp, formatNumber)}</td>
+      <td>${renderMetricStack(r.dkp, r.sumDkp, formatNumber)}</td>
+      <td>${renderMetricStack(r.dkpPercent, r.sumDkpPercent, formatPercent)}</td>
       <td>${Number(r.acclaim || 0).toLocaleString("en-US")}</td>
     </tr>`,
     )
