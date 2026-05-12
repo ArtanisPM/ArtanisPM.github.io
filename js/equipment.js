@@ -89,6 +89,9 @@ CREATE TABLE IF NOT EXISTS stats (
   min_dkp INTEGER,
   dkp INTEGER,
   dkp_percent REAL,
+  sum_min_dkp INTEGER,
+  sum_dkp INTEGER,
+  sum_dkp_percent REAL,
   vacation TEXT,
   status TEXT,
   acclaim INTEGER,
@@ -400,6 +403,17 @@ function ensureAppSchema() {
   for (const stmt of stmts) {
     try { db.run(stmt + ";"); } catch (e) { console.warn("schema update skipped:", e); }
   }
+  try {
+    const cols = db.exec("PRAGMA table_info(stats)");
+    const existing = new Set(cols.length ? cols[0].values.map(r => r[1]) : []);
+    [
+      ["sum_min_dkp", "INTEGER"],
+      ["sum_dkp", "INTEGER"],
+      ["sum_dkp_percent", "REAL"],
+    ].forEach(([name, type]) => {
+      if (!existing.has(name)) db.run(`ALTER TABLE stats ADD COLUMN ${name} ${type}`);
+    });
+  } catch (e) { console.warn("stats migration skipped:", e); }
 }
 
 farmFileInput?.addEventListener("change", updateImportButtons);
@@ -936,6 +950,7 @@ async function importKvkWorkbook() {
           const governorId = importToInt(row[0]);
           if (!governorId) continue;
           const name = importToText(row[1], "");
+          const hasRollupCols = row.length > 20;
 
           db.run(
             `INSERT OR IGNORE INTO governors (governor_id, kingdom, name)
@@ -944,8 +959,15 @@ async function importKvkWorkbook() {
           );
 
           db.run(
-            `INSERT OR REPLACE INTO stats VALUES (
-              ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+            `INSERT OR REPLACE INTO stats (
+              snapshot_id, governor_id,
+              power, kill_points, t4, t5, deads,
+              power_diff, kp_diff, t4_diff, t5_diff, deads_diff,
+              min_dkp, dkp, dkp_percent,
+              sum_min_dkp, sum_dkp, sum_dkp_percent,
+              vacation, status, acclaim
+            ) VALUES (
+              ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )`,
             [
               snapshotId,
@@ -963,9 +985,12 @@ async function importKvkWorkbook() {
               importToInt(row[7]),
               importToInt(row[8]),
               importToFloat(row[9]),
-              importToText(row[10], "NO"),
-              importToText(row[11], "OK"),
-              importToInt(row[17]),
+              importToInt(hasRollupCols ? row[10] : row[7]),
+              importToInt(hasRollupCols ? row[11] : row[8]),
+              importToFloat(hasRollupCols ? row[12] : row[9]),
+              importToText(hasRollupCols ? row[13] : row[10], "NO"),
+              importToText(hasRollupCols ? row[14] : row[11], "OK"),
+              importToInt(hasRollupCols ? row[20] : row[17]),
             ]
           );
           statCount++;
