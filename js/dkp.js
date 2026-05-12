@@ -48,6 +48,7 @@ let resultsGridApi = null;
   let minDkpMap = {};
   let lastResults = null;
   let skippedCount = 0;
+  let farmLinksPromise = null;
 
   function setExportEnabled(enabled) {
     ["export-xlsx", "export-csv", "export-json"].forEach((id) => {
@@ -324,6 +325,102 @@ let resultsGridApi = null;
     return Number.isFinite(n) ? n : 0;
   }
 
+  function normalizeNumericId(value) {
+    const id = String(value ?? "").trim();
+    return /^\d+$/.test(id) ? id : null;
+  }
+
+  function isVacationRow(row) {
+    return String(row?.Vacation ?? "").trim().toUpperCase() === "YES";
+  }
+
+  function loadFarmLinks() {
+    if (farmLinksPromise) return farmLinksPromise;
+
+    farmLinksPromise = (async () => {
+      if (!window.initSqlJs) return new Map();
+
+      const SQL = await initSqlJs({
+        locateFile: (file) =>
+          `https://cdn.jsdelivr.net/npm/sql.js@1.14.1/dist/${file}`,
+      });
+      const res = await fetch("kvk.db", { cache: "no-store" });
+      if (!res.ok) throw new Error(`Could not load kvk.db (${res.status})`);
+
+      const buffer = await res.arrayBuffer();
+      const db = new SQL.Database(new Uint8Array(buffer));
+      const links = new Map();
+
+      try {
+        const farmRes = db.exec(`
+          SELECT player_id, main_id
+          FROM farm_accounts
+          WHERE lower(coalesce(acc_type, ''))='farm'
+            AND main_id IS NOT NULL
+            AND main_id != ''
+        `);
+
+        if (farmRes.length) {
+          farmRes[0].values.forEach(([farmIdRaw, mainIdRaw]) => {
+            const farmId = normalizeNumericId(farmIdRaw);
+            const mainId = normalizeNumericId(mainIdRaw);
+            if (!farmId || !mainId || farmId === mainId) return;
+            if (!links.has(mainId)) links.set(mainId, []);
+            links.get(mainId).push(farmId);
+          });
+        }
+      } finally {
+        db.close();
+      }
+
+      return links;
+    })().catch((err) => {
+      console.warn("[DKP] Farm rollup unavailable:", err);
+      return new Map();
+    });
+
+    return farmLinksPromise;
+  }
+
+  async function applyFarmRollups(rows) {
+    const byId = new Map();
+    rows.forEach((row) => {
+      const id = normalizeNumericId(row.ID);
+      if (id) byId.set(id, row);
+    });
+
+    rows.forEach((row) => {
+      if (isVacationRow(row)) return;
+      row["Sum Min DKP"] = Math.round(safeNum(row["Min DKP"]));
+      row["Sum DKP"] = Math.round(safeNum(row.DKP));
+      row["Sum DKP%"] = row["Sum Min DKP"]
+        ? Number((row["Sum DKP"] / row["Sum Min DKP"]).toFixed(4))
+        : 0;
+    });
+
+    const links = await loadFarmLinks();
+    links.forEach((farmIds, mainId) => {
+      const main = byId.get(mainId);
+      if (!main || isVacationRow(main)) return;
+
+      let sumMinDkp = safeNum(main["Min DKP"]);
+      let sumDkp = safeNum(main.DKP);
+
+      farmIds.forEach((farmId) => {
+        const farm = byId.get(farmId);
+        if (!farm || isVacationRow(farm)) return;
+        sumMinDkp += safeNum(farm["Min DKP"]);
+        sumDkp += safeNum(farm.DKP);
+      });
+
+      main["Sum Min DKP"] = Math.round(sumMinDkp);
+      main["Sum DKP"] = Math.round(sumDkp);
+      main["Sum DKP%"] = sumMinDkp
+        ? Number((sumDkp / sumMinDkp).toFixed(4))
+        : 0;
+    });
+  }
+
   function getChFromRow(row) {
     if (
       !row ||
@@ -444,6 +541,9 @@ let resultsGridApi = null;
         "Min DKP": Math.round(minDkp),
         DKP: Math.round(DKP),
         "DKP%": Number.isFinite(DKPpercent) ? Number(DKPpercent.toFixed(4)) : 0,
+        "Sum Min DKP": 0,
+        "Sum DKP": 0,
+        "Sum DKP%": 0,
         Vacation: vacation,
         Status: status,
         "T4 Kills": safeNum(a["T4 Kills"]),
@@ -465,17 +565,21 @@ let resultsGridApi = null;
       results.push(row);
     }
 
-    results.sort((x, y) => y.DKP - x.DKP);
+    await applyFarmRollups(results);
 
-    lastResults = results;
-    if (!results || results.length === 0) {
+    const visibleResults = results.filter((row) => !isVacationRow(row));
+
+    visibleResults.sort((x, y) => y.DKP - x.DKP);
+
+    lastResults = visibleResults;
+    if (!visibleResults || visibleResults.length === 0) {
       setExportEnabled(false);
       return;
     }
-    createResultsGrid(results);
+    createResultsGrid(visibleResults);
     setExportEnabled(true);
     progressEl.value = 100;
-    resultsInfo.textContent = `Calculated ${results.length} rows (skipped ${skippedCount} due to CH<25).`;
+    resultsInfo.textContent = `Calculated ${visibleResults.length} rows (skipped ${skippedCount} due to CH<25).`;
   }
 
   async function ensureMinDkpForIds(allIds, df1, df2, map1, map2) {
