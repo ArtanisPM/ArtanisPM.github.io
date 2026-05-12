@@ -57,6 +57,9 @@ CREATE TABLE IF NOT EXISTS stats (
   min_dkp INTEGER,
   dkp INTEGER,
   dkp_percent REAL,
+  sum_min_dkp INTEGER,
+  sum_dkp INTEGER,
+  sum_dkp_percent REAL,
   vacation TEXT,
   status TEXT,
   acclaim INTEGER,
@@ -226,6 +229,16 @@ CREATE TABLE IF NOT EXISTS farm_accounts (
 conn = sqlite3.connect(DB_PATH)
 conn.execute("PRAGMA foreign_keys = ON")
 conn.executescript(schema_sql)
+for column_name, column_type in (
+    ("sum_min_dkp", "INTEGER"),
+    ("sum_dkp", "INTEGER"),
+    ("sum_dkp_percent", "REAL"),
+):
+    existing = {
+        row[1] for row in conn.execute("PRAGMA table_info(stats)").fetchall()
+    }
+    if column_name not in existing:
+        conn.execute(f"ALTER TABLE stats ADD COLUMN {column_name} {column_type}")
 conn.commit()
 conn.close()
 
@@ -349,6 +362,7 @@ for cfg in FILES:
         for _, r in df.iterrows():
             governor_id = to_int(r.iloc[0])
             name = to_text(r.iloc[1], "")
+            has_rollup_cols = len(r) > 20
 
             if not governor_id:
                 continue
@@ -363,8 +377,15 @@ for cfg in FILES:
 
             cur.execute(
                 """
-                INSERT OR REPLACE INTO stats VALUES (
-                  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                INSERT OR REPLACE INTO stats (
+                  snapshot_id, governor_id,
+                  power, kill_points, t4, t5, deads,
+                  power_diff, kp_diff, t4_diff, t5_diff, deads_diff,
+                  min_dkp, dkp, dkp_percent,
+                  sum_min_dkp, sum_dkp, sum_dkp_percent,
+                  vacation, status, acclaim
+                ) VALUES (
+                  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
                 )
             """,
                 (
@@ -383,9 +404,12 @@ for cfg in FILES:
                     to_int(r.iloc[7]),  # min DKP
                     to_int(r.iloc[8]),  # dkp
                     to_float(r.iloc[9]),  # dkp_percent
-                    to_text(r.iloc[10], "NO"),  # Vacation
-                    to_text(r.iloc[11], "OK"),  # status
-                    to_int(r.iloc[17]),  # acclaim
+                    to_int(r.iloc[10] if has_rollup_cols else r.iloc[7]),  # sum min DKP
+                    to_int(r.iloc[11] if has_rollup_cols else r.iloc[8]),  # sum dkp
+                    to_float(r.iloc[12] if has_rollup_cols else r.iloc[9]),  # sum dkp_percent
+                    to_text(r.iloc[13] if has_rollup_cols else r.iloc[10], "NO"),  # Vacation
+                    to_text(r.iloc[14] if has_rollup_cols else r.iloc[11], "OK"),  # status
+                    to_int(r.iloc[20] if has_rollup_cols else r.iloc[17]),  # acclaim
                 ),
             )
 
