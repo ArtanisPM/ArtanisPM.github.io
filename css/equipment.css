@@ -775,17 +775,24 @@ body.dark .eq-slot-stat.filled {
 }
 
 .eq-picker-search-wrap {
-  flex: 1;
+  flex: 0 1 240px;
   position: relative;
   display: flex;
   align-items: center;
 }
+.eq-picker-search-wrap i,
 .eq-picker-search-wrap svg {
   position: absolute;
-  left: 9px;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  line-height: 1;
   opacity: 0.4;
   pointer-events: none;
   color: var(--text-color);
+}
+#pickerClose {
+  margin-left: auto;
 }
 
 .eq-picker-search {
@@ -1504,6 +1511,10 @@ body.dark .eq-arm-stat-tag {
 }
 .eq-ins-picker-search-wrap {
   padding: 12px 20px 8px;
+}
+.eq-ins-picker-search-wrap .eq-input {
+  width: 100%;
+  max-width: 260px;
 }
 .eq-ins-picker-body {
   flex: 1;
