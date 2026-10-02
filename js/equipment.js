@@ -1415,7 +1415,7 @@ function renderArmamentsGrid() {
             .filter((v) => !isArmEmpty(v))
             .map((v) => {
               const tier = getArmTier(String(v));
-              return `<span class="eq-arm-ins eq-arm-ins--${tier}" data-tip-code="${escapeHtml(String(v).trim())}" data-tip-kind="inscription">${escapeHtml(String(v))}</span>`;
+              return `<span class="arm-ins tier-${tier}" data-tip-code="${escapeHtml(String(v).trim())}" data-tip-kind="inscription">${escapeHtml(String(v))}</span>`;
             })
             .join("")
         : "";
@@ -1442,7 +1442,7 @@ function renderArmamentsGrid() {
         <span class="eq-arm-name${isEmpty ? " eq-arm-name--empty" : ""}">${isEmpty ? "— empty —" : escapeHtml(String(name))}</span>
         <button class="eq-arm-edit-btn" title="${isEmpty ? "Add armament" : "Edit armament"}">${isEmpty ? "+" : "✎"}</button>
       </div>
-      ${inscriptions ? `<div class="eq-arm-ins-row">${inscriptions}</div>` : ""}
+      ${inscriptions ? `<div class="arm-ins-group">${inscriptions}</div>` : ""}
       ${stats ? `<div class="eq-arm-stats-row">${stats}</div>` : ""}
     `;
     div.querySelector(".eq-arm-edit-btn").addEventListener("click", (e) => {
@@ -2710,8 +2710,31 @@ function renderPickerItems(filter) {
       if (skinsData[i]) candidates.add(skinsData[i]);
   }
 
+  const kindForInfo =
+    pickerTarget?.type === "pair"
+      ? "commander"
+      : pickerTarget?.type === "skin"
+        ? "skin"
+        : "item";
+
+  // Reference data is keyed by code; the human-readable name lives in
+  // info.name. Search matches against both so full names work.
+  const fullNameOf = (code) => {
+    const info =
+      kindForInfo === "commander"
+        ? getCommanderInfo(code)
+        : kindForInfo === "skin"
+          ? getSkinInfo(code)
+          : getItemInfo(code);
+    return info && info.name ? String(info.name) : "";
+  };
+
   let list = [...candidates].sort((a, b) => a.localeCompare(b));
-  if (q) list = list.filter((n) => n.toLowerCase().includes(q));
+  if (q)
+    list = list.filter(
+      (n) =>
+        n.toLowerCase().includes(q) || fullNameOf(n).toLowerCase().includes(q),
+    );
 
   if (!list.length) {
     pickerBody.innerHTML = `<div class="eq-picker-empty">${
@@ -2740,7 +2763,7 @@ function renderPickerItems(filter) {
     div.innerHTML = `
       <img src="${iconPath(name, tipKind)}" alt="${escapeHtml(name)}" loading="lazy"
            onerror="this.style.display='none'">
-      <span class="eq-picker-item-name">${escapeHtml(name)}</span>`;
+      <span class="eq-picker-item-name">${escapeHtml(fullNameOf(name) || name)}</span>`;
     div.addEventListener("click", () => selectPickerItem(name));
     pickerBody.appendChild(div);
   }
@@ -3057,7 +3080,7 @@ function renderInsChosenList() {
   list.innerHTML = vals
     .map((v) => {
       const tier = getArmTier(v);
-      return `<span class="eq-arm-ins eq-arm-ins--${tier}" data-tip-code="${escapeHtml(String(v).trim())}" data-tip-kind="inscription">${escapeHtml(v)}</span>`;
+      return `<span class="arm-ins tier-${tier}" data-tip-code="${escapeHtml(String(v).trim())}" data-tip-kind="inscription">${escapeHtml(v)}</span>`;
     })
     .join("");
 }
@@ -3085,13 +3108,13 @@ function renderInsPickerList(filter) {
 
   body.innerHTML = "";
   const wrap = document.createElement("div");
-  wrap.className = "eq-ins-pill-grid";
+  wrap.className = "arm-ins-group eq-ins-pill-grid";
   for (const name of list) {
     const tier = getArmTier(name);
     const checked = insPickerSelected.includes(name);
     const pill = document.createElement("button");
     pill.type = "button";
-    pill.className = `eq-ins-pill eq-ins-pill--${tier}${checked ? " selected" : ""}`;
+    pill.className = `arm-ins tier-${tier}${checked ? " selected" : ""}`;
     pill.textContent = name;
     pill.dataset.tipCode = name;
     pill.dataset.tipKind = "inscription";
@@ -3121,7 +3144,7 @@ function renderInsPickerFooter() {
   wrap.innerHTML = insPickerSelected
     .map((v) => {
       const tier = getArmTier(v);
-      return `<span class="eq-arm-ins eq-arm-ins--${tier}" data-tip-code="${escapeHtml(String(v).trim())}" data-tip-kind="inscription">${escapeHtml(v)}</span>`;
+      return `<span class="arm-ins tier-${tier}" data-tip-code="${escapeHtml(String(v).trim())}" data-tip-kind="inscription">${escapeHtml(v)}</span>`;
     })
     .join("");
 }
