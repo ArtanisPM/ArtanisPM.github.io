@@ -1783,14 +1783,12 @@ body.dark .eq-arm-stat-tag {
   }
 }
 
-/* Slightly larger text for inputs inside modals */
 .eq-arm-modal .eq-input,
 .eq-ins-picker-search-wrap .eq-input,
 .eq-detail-popup .eq-input {
   font-size: 0.96rem;
 }
 
-/* Cap the Governor ID / Name input so it doesn't stretch across the row */
 .eq-input-wrap--gov {
   flex: 0 1 360px;
 }
