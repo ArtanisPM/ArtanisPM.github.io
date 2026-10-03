@@ -1690,14 +1690,11 @@ function loadPlayerProfile(govId) {
 
 function iconPath(name, kind) {
   const folder =
-    kind === "commander"
-      ? "commanders"
-      : kind === "skin"
-        ? "skins"
-        : kind === "armament"
-          ? "armaments"
-          : "equipment";
-  return `icons/${folder}/${encodeURIComponent(String(name).trim())}.webp`;
+    kind === "commander" ? "commanders" :
+    kind === "skin" ? "skins" :
+    kind === "armament" ? "armaments" :
+    "equipment";
+  return `icons/${folder}/${encodeURIComponent(String(name).trim().toLowerCase())}.webp`;
 }
 
 function isEmptyVal(v) {
