@@ -1519,7 +1519,7 @@ function renderKvkGainBoxes(rows) {
   const plain = { signed: false };
 
   const boxes = [...rows]
-    .reverse() // newest KvK first
+    .reverse()
     .map((r) => {
       const f = r.hasFarmRollup;
       return `
@@ -2181,7 +2181,7 @@ function renderFarmKvKBoxes(rows) {
   const plain = { signed: false };
 
   const kvkBlocks = Object.keys(grouped)
-    .reverse() // newest KvK first
+    .reverse()
     .map((kvkName) => {
       const boxes = grouped[kvkName]
         .map(
