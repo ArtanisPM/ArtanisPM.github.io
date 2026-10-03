@@ -951,3 +951,35 @@ body.dark .cell-tooltip {
   font-size: 0.75rem;
   opacity: 0.65;
 }
+.kvk-gains-grid + .kvk-gains-grid,
+.collapsible-content > .kvk-gains-grid {
+  margin-bottom: 0;
+}
+
+.kvk-gain-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.kvk-gain-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kvk-gain-id {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 0.55;
+}
+
+.kvk-gain-stats.cols-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.collapsible-content .collapsible-section {
+  margin-top: 12px;
+}
