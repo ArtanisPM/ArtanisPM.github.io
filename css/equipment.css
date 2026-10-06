@@ -1644,3 +1644,9 @@ body.dark .eq-arm-stat-tag {
 .eq-input-wrap--gov {
   flex: 0 1 360px;
 }
+.eq-arm-ins-group {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  row-gap: 5px;
+  margin-top: 5px;
+}
