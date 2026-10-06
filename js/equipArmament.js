@@ -216,7 +216,7 @@ function renderInsPickerList(filter) {
 
   body.innerHTML = "";
   const wrap = document.createElement("div");
-  wrap.className = "arm-ins-group eq-ins-pill-grid";
+  wrap.className = "eq-arm-ins-group eq-ins-pill-grid";
   for (const name of list) {
     const tier = getArmTier(name);
     const checked = insPickerSelected.includes(name);
