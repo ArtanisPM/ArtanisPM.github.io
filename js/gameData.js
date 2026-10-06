@@ -17,15 +17,20 @@ const refData = {
   skins: {},
   armaments: {},
   armamentsByKey: {},
+  armTroopTypes: {},
 };
 
+/** kind -> file, and the top-level key inside that file. */
 const REF_FILES = {
-  items: "data/items.json",
-  commanders: "data/commanders.json",
-  inscriptions: "data/inscriptions.json",
-  skins: "data/skins.json",
-  armaments: "data/armaments.json",
+  items: { url: "data/items.json", key: "items" },
+  commanders: { url: "data/commanders.json", key: "commanders" },
+  inscriptions: { url: "data/inscriptions.json", key: "inscriptions" },
+  skins: { url: "data/skins.json", key: "skins" },
+  armaments: { url: "data/armaments.json", key: "armaments" },
+  armTroopTypes: { url: "data/arm_troop_types.json", key: "types" },
 };
+/** What loadEquipRefData() loads when called without a list. */
+const DEFAULT_REF_KINDS = ["items", "commanders", "inscriptions", "skins", "armaments"];
 const refLoads = {};
 
 function normalizeArmamentKey(v) {
@@ -39,20 +44,21 @@ function normalizeArmamentKey(v) {
 /** Each file loads once; a broken or missing file only affects its own lookups. */
 function loadRefFile(kind) {
   refLoads[kind] ??= (async () => {
+    const { url, key } = REF_FILES[kind];
     try {
-      const res = await fetch(REF_FILES[kind]);
+      const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
-      refData[kind] = json[kind] || {};
+      refData[kind] = json[key] || {};
     } catch (e) {
-      console.error(`${REF_FILES[kind]} failed to load or parse:`, e);
+      console.error(`${url} failed to load or parse:`, e);
     }
   })();
   return refLoads[kind];
 }
 
-/** loadEquipRefData() loads everything; pass names to load only some. */
-async function loadEquipRefData(kinds = Object.keys(REF_FILES)) {
+/** loadEquipRefData() loads the usual five files; pass names to load a different set. */
+async function loadEquipRefData(kinds = DEFAULT_REF_KINDS) {
   await Promise.all(kinds.map(loadRefFile));
 
   refData.inscriptionsByName = {};
@@ -85,6 +91,22 @@ function getInscriptionInfo(name) {
 function getArmamentInfo(name) {
   return refData.armamentsByKey[normalizeArmamentKey(name)] || null;
 }
+/**
+ * Armament types for a <select>: label is the full name from armaments.json
+ * ("Double Line Formation"); value is the short name the database stores
+ * ("Double Line"), which is also the icon file name.
+ */
+function getArmamentTypeOptions() {
+  return Object.values(refData.armaments)
+    .filter((a) => a.name)
+    .map((a) => ({ value: a.name.replace(/\s+Formation$/i, ""), label: a.name }));
+}
+
+/** Stat names for the armament stat dropdowns (data/arm_troop_types.json). */
+function getArmTroopTypeNames() {
+  return Object.keys(refData.armTroopTypes);
+}
+
 function getAllInscriptionNames() {
   return Object.values(refData.inscriptionsByName)
     .map((i) => i.name)
