@@ -1,0 +1,38 @@
+{
+  "types": {
+    "Infantry Attack": {
+    },
+    "Infantry Defense": {
+    },
+    "Infantry Health": {
+    },
+    "Cavalry Attack": {
+    },
+    "Cavalry Defense": {
+    },
+    "Cavalry Health": {
+    },
+    "Archer Attack": {
+    },
+    "Archer Defense": {
+    },
+    "Archer Health": {
+    },
+    "Siege Attack": {
+    },
+    "Siege Defense": {
+    },
+    "Siege Health": {
+    },
+    "All Damage": {
+    },
+    "Infantry March Speed": {
+    },
+    "Archer March Speed": {
+    },
+    "Cavalry March Speed": {
+    },
+    "Siege March Speed": {
+    }
+  }
+}
