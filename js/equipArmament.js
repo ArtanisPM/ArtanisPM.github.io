@@ -4,71 +4,32 @@
    everything here is called later from equipment.js handlers.
    ========================================================================== */
 
-const ARM_SET_BONUSES = {
-  Pincer: {
-    name: "Pincer Formation",
-    bonus: "The user's troop deals 10% more smite damage.",
-  },
-  Wedge: {
-    name: "Wedge Formation",
-    bonus: "The user's troop deals 5% more skill damage.",
-  },
-  Delta: {
-    name: "Delta Formation",
-    bonus: "The user's troop deals 10% more combo attack damage.",
-  },
-  Tercio: {
-    name: "Tercio Formation",
-    bonus:
-      "When the user is garrisoned in your city, all unit-specific attribute bonuses (Attack/Defense/Health) from the user's armaments will apply to all unit types.",
-  },
-  "Double Line": {
-    name: "Double Line Formation",
-    bonus:
-      "If the user's troop is marching towards barbarians, it gains 10% March Speed.",
-  },
-  Staggered: {
-    name: "Staggered Formation",
-    bonus:
-      "The user's troop gains 15% March Speed when marching to join a rallied army or garrison.",
-  },
-  Circle: {
-    name: "Circle Formation",
-    bonus: "All healing the user's troop receives is increased by 5%.",
-  },
-  Tetsudo: {
-    name: "Tetsudo Formation",
-    bonus:
-      "The user's troop takes 5% less damage while it has a shield. All healing their troop receives is increased by 2.5%.",
-  },
-  "Triple Line": {
-    name: "Triple Line Formation",
-    bonus: "Increases the March Speed of the user's troop by 5%.",
-  },
-  Line: {
-    name: "Line Formation",
-    bonus:
-      "Increases the Food, Wood, Stone, and Gold Gathering Speed of the user's troop by 10%.",
-  },
-  "Hollow Square": {
-    name: "Hollow Square Formation",
-    bonus: "The user's troop takes 2% less damage.",
-  },
-  Echelon: {
-    name: "Echelon Formation",
-    bonus:
-      "When the user's troop grants percentage-based buffs to other troops, their effects are multiplied by 1.2, with a maximum increase of up to 5% of their original value.",
-  },
-  V: {
-    name: "V Formation",
-    bonus:
-      "The user's troop can switch to ranged mode, allowing it to launch 1 ranged basic attack per second. If your city is in a War Frenzy, your troops in ranged mode will automatically launch ranged attacks against enemies within their attack range that are attacking a friendly or allied troop. Only commanders with the Engineering talent tag can use their active skills while in V formation.",
-  },
-  Arch: {
-    name: "Arch Formation",
-    bonus: "The user's troop deals 5% more normal damage.",
-  },
-};
+/* ---------- dropdowns (filled from data/armaments.json and data/arm_troop_types.json) ---------- */
+
+function fillSelect(select, options, placeholder) {
+  select.replaceChildren(new Option(placeholder, ""));
+  options.forEach(({ value, label }) => select.add(new Option(label, value)));
+}
+
+function populateArmamentSelects() {
+  fillSelect(
+    document.getElementById("armModalName"),
+    getArmamentTypeOptions(),
+    "— Select type —",
+  );
+  const stats = getArmTroopTypeNames().map((n) => ({ value: n, label: n }));
+  ARM_STAT_DEFS.forEach((_, i) => {
+    fillSelect(document.getElementById(`armStatName${i}`), stats, "— Select stat —");
+  });
+}
+
+/** Sets a <select>; a saved value that is no longer in the list is kept as an extra option. */
+function setSelectValue(select, value) {
+  if (value && ![...select.options].some((o) => o.value === value)) {
+    select.add(new Option(value, value));
+  }
+  select.value = value;
+}
 
 function renderArmSetBonus() {
   const preview = document.getElementById("armSetBonusPreview");
@@ -90,12 +51,13 @@ function renderArmSetBonus() {
 
   let html = "";
   for (const [type, count] of Object.entries(counts)) {
-    const bonus = ARM_SET_BONUSES[type];
+    const info = getArmamentInfo(type);
+    const bonus = toArray(info?.description).join(" ");
     const active = count >= 3;
     html += `<div class="eq-arm-set-row${active ? " active" : ""}">
-      <span class="eq-arm-set-name">${escapeHtml(type)}</span>
+      <span class="eq-arm-set-name">${escapeHtml(info?.name || type)}</span>
       <span class="eq-arm-set-count">×${count}</span>
-      ${bonus ? `<span class="eq-arm-set-bonus">${active ? "✓ " : ""}${escapeHtml(bonus.bonus)}</span>` : ""}
+      ${bonus ? `<span class="eq-arm-set-bonus">${active ? "✓ " : ""}${escapeHtml(bonus)}</span>` : ""}
     </div>`;
   }
   preview.innerHTML =
@@ -113,16 +75,18 @@ function openArmamentEditor(prefix, label) {
 
   document.getElementById("armModalTitle").textContent = `Edit ${label}`;
 
-  document.getElementById("armModalName").value = isArmEmpty(row[prefix])
-    ? ""
-    : String(row[prefix]);
+  setSelectValue(
+    document.getElementById("armModalName"),
+    isArmEmpty(row[prefix]) ? "" : String(row[prefix]),
+  );
 
   ARM_STAT_DEFS.forEach((s, i) => {
     const nk = `${prefix}${s.nameKey}`;
     const vk = `${prefix}${s.valKey}`;
-    document.getElementById(`armStatName${i}`).value = isArmEmpty(row[nk])
-      ? ""
-      : String(row[nk]);
+    setSelectValue(
+      document.getElementById(`armStatName${i}`),
+      isArmEmpty(row[nk]) ? "" : String(row[nk]),
+    );
     document.getElementById(`armStatVal${i}`).value = isArmEmpty(row[vk])
       ? ""
       : String(row[vk]);
