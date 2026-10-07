@@ -210,10 +210,13 @@ function renderArmamentRow(armRow) {
     const statSlots = armStatColumns(arm.prefix);
     const statsHtml = statSlots
       .filter((s) => !isEmptyVal(armRow[s.n]) && !isEmptyVal(armRow[s.v]))
-      .map(
-        (s) =>
-          `<span class="arm-stat"><i class="fa-solid fa-khanda arm-stat-icon"></i>${escapeHtml(String(armRow[s.n]))} <b>${escapeHtml(String(armRow[s.v]))}%</b></span>`,
-      )
+      .map((s) => {
+        const iconSrc = getArmStatIconPath(armRow[s.n]);
+        const icon = iconSrc
+          ? `<img class="arm-stat-img" src="${iconSrc}" alt="" loading="lazy" onerror="this.style.display='none'">`
+          : `<i class="fa-solid fa-khanda arm-stat-icon"></i>`;
+        return `<span class="arm-stat">${icon}${escapeHtml(String(armRow[s.n]))} <b>${escapeHtml(String(armRow[s.v]))}%</b></span>`;
+      })
       .join("");
 
     const armIconSrc = iconPath(name, "armament");
