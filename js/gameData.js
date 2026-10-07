@@ -30,7 +30,7 @@ const REF_FILES = {
   armTroopTypes: { url: "data/arm_troop_types.json", key: "types" },
 };
 /** What loadEquipRefData() loads when called without a list. */
-const DEFAULT_REF_KINDS = ["items", "commanders", "inscriptions", "skins", "armaments"];
+const DEFAULT_REF_KINDS = ["items", "commanders", "inscriptions", "skins", "armaments", "armTroopTypes"];
 const refLoads = {};
 
 function normalizeArmamentKey(v) {
@@ -100,6 +100,12 @@ function getArmamentTypeOptions() {
   return Object.values(refData.armaments)
     .filter((a) => a.name)
     .map((a) => ({ value: a.name.replace(/\s+Formation$/i, ""), label: a.name }));
+}
+
+/** Icon for an armament stat, from the "icon" field in data/arm_troop_types.json; null if it has none. */
+function getArmStatIconPath(statName) {
+  const icon = refData.armTroopTypes[String(statName ?? "").trim()]?.icon;
+  return icon ? `icons/troopico/${encodeURIComponent(icon)}.webp` : null;
 }
 
 /** Stat names for the armament stat dropdowns (data/arm_troop_types.json). */
