@@ -1081,6 +1081,12 @@ body.dark #backToTop:hover {
   transform: rotate(-40deg);
   flex-shrink: 0;
 }
+.arm-stat-img {
+  width: 1.2em;
+  height: 1.2em;
+  object-fit: contain;
+  flex-shrink: 0;
+}
 .arm-stat b {
   opacity: 1;
   font-weight: 700;
