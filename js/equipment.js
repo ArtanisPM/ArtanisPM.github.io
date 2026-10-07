@@ -59,7 +59,7 @@ let allSkinNames = [];
   } catch (e) {
     console.error("sql.js init failed:", e);
   }
-  await loadEquipRefData([...DEFAULT_REF_KINDS, "armTroopTypes"]);
+  await loadEquipRefData();
   populateArmamentSelects();
   loadIconManifest();
   loadSkinManifest();
