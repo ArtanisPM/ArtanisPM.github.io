@@ -53,7 +53,7 @@ let allSkinNames = [];
 
 
 (async () => {
-  buildArmStatRows(); // the modal must work even before the JSON files finish loading
+  buildArmStatRows();
   try {
     SQL = await getSqlJs();
   } catch (e) {
