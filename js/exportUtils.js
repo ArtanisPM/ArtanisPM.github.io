@@ -33,7 +33,7 @@ function applyPercentFormats(ws, rows) {
     if (!isPercentColumn(header)) return;
     const colLetter = XLSX.utils.encode_col(colIdx);
     rows.forEach((_, rowIdx) => {
-      const cell = ws[`${colLetter}${rowIdx + 2}`]; // +2: header is row 1
+      const cell = ws[`${colLetter}${rowIdx + 2}`];
       if (cell && typeof cell.v === "number") cell.z = "0.00%";
     });
   });
