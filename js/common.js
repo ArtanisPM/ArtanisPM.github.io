@@ -1,4 +1,9 @@
-/* Load it first, before any page script. */
+/* ==========================================================================
+   common.js — helpers shared by every page.
+   Classic (non-module) script: load it first, before any page script.
+   Provides: URL/id helpers, number formatting, escapeHtml, copyText,
+   toasts, theme (+ "themechange" event) and navbar behaviour.
+   ========================================================================== */
 function normalizeNumericId(value) {
   const id = String(value ?? "").trim();
   return /^\d+$/.test(id) ? id : null;
