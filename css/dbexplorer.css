@@ -288,36 +288,6 @@
   opacity: 0.55;
   font-size: 0.9rem;
 }
-.dbx-data-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-.dbx-search-wrap {
-  position: relative;
-  flex: 1;
-  min-width: 180px;
-  max-width: 320px;
-}
-.dbx-search-wrap i {
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  opacity: 0.45;
-}
-.dbx-search-wrap input {
-  width: 100%;
-  padding: 7px 10px 7px 30px;
-  border-radius: 7px;
-  border: 1px solid var(--table-border);
-  background: var(--table-bg);
-  color: var(--text-color);
-  font-size: 0.85rem;
-}
 .dbx-cell-null {
   opacity: 0.4;
   font-style: italic;
@@ -332,31 +302,8 @@
   margin-left: 6px;
   vertical-align: middle;
 }
-.dbx-ag-grid {
-  height: 560px;
-  width: 100%;
-  border-radius: 10px;
-  overflow: hidden;
-  opacity: 0;
-  transform: translateY(10px);
-  transition:
-    opacity 0.4s ease,
-    transform 0.4s ease;
-}
-.dbx-ag-grid.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-.dbx-ag-grid--auto {
-  height: auto;
-}
 .dbx-pk-cell {
   font-weight: 600;
-}
-.dbx-num-cell {
-  text-align: right;
-  justify-content: flex-end;
-  font-variant-numeric: tabular-nums;
 }
 .dbx-schema-table {
   margin-bottom: 18px;
