@@ -3,8 +3,6 @@
    Depends on: common.js, gameData.js, queries.js (loadGovernorEquipment/Armaments/Skins).
    ========================================================================== */
 
-/* ---------- slots ---------- */
-
 const EQUIP_SLOTS = [
   { key: "helm", label: "Helm", id: "helmet" },
   { key: "chest", label: "Chest", id: "chest" },
@@ -27,8 +25,6 @@ const ARM_SLOTS = [
   { prefix: "arm8", label: "Arm 8" },
 ];
 const SKIN_SLOTS = Array.from({ length: 8 }, (_, i) => `skin${i + 1}`);
-
-/* ---------- helpers ---------- */
 
 function isMarchEmpty(row, suffix) {
   return EQUIP_SLOTS.every((slot) => {
@@ -61,8 +57,6 @@ function renderSlotPlaceholderIcon(slotId) {
   };
   return `<svg class="equip-placeholder-icon" viewBox="0 0 16 16" aria-hidden="true">${icons[slotId] || icons.accessory}</svg>`;
 }
-
-/* ---------- rendering ---------- */
 
 function renderEquipBox(slot, itemName, lvl, tal, marchIdx) {
   const isEmpty = isEmptyVal(itemName);
