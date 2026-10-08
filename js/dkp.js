@@ -1,7 +1,4 @@
 (() => {
-  let powerGridApi = null;
-  let resultsGridApi = null;
-
   localforage.config({ name: "dkp_web_app" });
 
   const KEY_MULT = "multipliers";
@@ -142,70 +139,45 @@
     return null;
   }
 
-  const powerRangeColumnDefs = [
-    {
-      headerName: "Min Power",
-      field: "min_power",
-      flex: 1,
-      minWidth: 100,
-      sortable: true,
-    },
-    {
-      headerName: "Max Power",
-      field: "max_power",
-      flex: 1,
-      minWidth: 100,
-      sortable: true,
-    },
-    { headerName: "%", field: "percentage", flex: 1, minWidth: 100 },
-    {
-      headerName: "Actions",
-      cellRenderer: () => {
-        return `
-			<button class="primary pr-edit">Edit</button>
-			<button class="secondary pr-delete">Delete</button>
-		  `;
-      },
-      sortable: false,
-      filter: false,
-      flex: 1,
-      minWidth: 100,
-    },
-  ];
-  function createPowerRangesGrid() {
-    const gridOptions = {
-      columnDefs: powerRangeColumnDefs,
-      rowData: powerRanges,
-      rowHeight: 42,
-      defaultColDef: {
-        resizable: true,
-        sortable: true,
-      },
-      onCellClicked: async (event) => {
-        const row = event.data;
-        const idx = powerRanges.indexOf(row);
-
-        if (event.event.target.classList.contains("pr-edit")) {
-          prMin.value = row.min_power;
-          prMax.value = row.max_power ?? "";
-          prPercent.value = row.percentage;
-          prAddBtn.dataset.editIdx = idx;
-          prAddBtn.textContent = "Update";
-        }
-
-        if (event.event.target.classList.contains("pr-delete")) {
-          if (!confirm("Delete this range?")) return;
-          powerRanges.splice(idx, 1);
-          await savePowerRangesToStorage();
-          powerGridApi.setGridOption("rowData", powerRanges);
-        }
-      },
-    };
-    powerGridApi = createThemedGrid(
-      document.querySelector("#power-table"),
-      gridOptions,
-    );
+  function renderPowerRanges() {
+    const rowActions = (idx, type) =>
+      type === "display"
+        ? `<button class="primary pr-edit" data-idx="${idx}">Edit</button>
+           <button class="secondary pr-delete" data-idx="${idx}">Delete</button>`
+        : "";
+    createSiteTable(document.querySelector("#power-table"), {
+      plain: true,
+      columns: [
+        { title: "Min Power" },
+        { title: "Max Power" },
+        { title: "%" },
+        { title: "Actions", render: rowActions, orderable: false },
+      ],
+      // last cell is the row's index in powerRanges, used by the buttons
+      data: powerRanges.map((r, i) => [r.min_power, r.max_power, r.percentage, i]),
+    });
   }
+
+  document.querySelector("#power-table").addEventListener("click", async (e) => {
+    const btn = e.target.closest(".pr-edit, .pr-delete");
+    if (!btn) return;
+    const idx = Number(btn.dataset.idx);
+    const row = powerRanges[idx];
+    if (!row) return;
+
+    if (btn.classList.contains("pr-edit")) {
+      prMin.value = row.min_power;
+      prMax.value = row.max_power ?? "";
+      prPercent.value = row.percentage;
+      prAddBtn.dataset.editIdx = idx;
+      prAddBtn.textContent = "Update";
+    } else {
+      if (!confirm("Delete this range?")) return;
+      powerRanges.splice(idx, 1);
+      await savePowerRangesToStorage();
+      renderPowerRanges();
+    }
+  });
 
   prAddBtn.addEventListener("click", async () => {
     const minv = parseInt(prMin.value, 10);
@@ -249,14 +221,14 @@
     }
 
     await savePowerRangesToStorage();
-    powerGridApi?.setGridOption("rowData", powerRanges);
+    renderPowerRanges();
 
     prMin.value = prMax.value = prPercent.value = "";
   });
 
   prSaveBtn.addEventListener("click", async () => {
     await savePowerRangesToStorage();
-    powerGridApi?.setGridOption("rowData", powerRanges);
+    renderPowerRanges();
   });
 
   async function readSpreadsheetFile(file) {
@@ -597,47 +569,12 @@
     if (toInsert.length) await saveMinDkpMap();
   }
 
-  function buildDynamicColumnDefs(rows) {
-    if (!rows?.length) return [];
-
-    return Object.keys(rows[0]).map((key) => ({
-      headerName: key,
-      field: key,
-      flex: 1,
-      minWidth: 130,
-      sortable: true,
-      resizable: true,
-      filter: false,
-      getQuickFilterText: () => "",
-    }));
-  }
-
   function createResultsGrid(rows) {
     if (!rows || !rows.length) return;
-
-    const gridDiv = document.querySelector("#result-table");
-    gridDiv.style.display = "block";
-    const columnDefs = buildDynamicColumnDefs(rows);
-
-    if (resultsGridApi) {
-      resultsGridApi.destroy();
-      resultsGridApi = null;
-      gridDiv.innerHTML = "";
-    }
-
-    const gridOptions = {
-      columnDefs,
-      rowData: rows,
-      rowHeight: 42,
-      animateRows: true,
-      pagination: true,
-      paginationPageSize: 50,
-      defaultColDef: {
-        sortable: true,
-        resizable: true,
-      },
-    };
-    resultsGridApi = createThemedGrid(gridDiv, gridOptions);
+    const el = document.querySelector("#result-table");
+    el.style.display = "block";
+    const { keys, data } = objectsToRows(rows);
+    createSiteTable(el, { columns: keys.map((k) => ({ title: k })), data });
   }
 
   async function exportSettings() {
@@ -677,7 +614,7 @@
       if (Array.isArray(parsed.power_ranges)) {
         powerRanges = parsed.power_ranges;
         await localforage.setItem(KEY_PR, powerRanges);
-        powerGridApi?.setGridOption("rowData", powerRanges);
+        renderPowerRanges();
       }
       if (Array.isArray(parsed.vacation_list)) {
         vacationList = parsed.vacation_list;
@@ -701,7 +638,7 @@
     await loadAllFromStorage();
 
     populateUIFromMemory();
-    createPowerRangesGrid();
+    renderPowerRanges();
     progressEl.value = 0;
 
     progressEl.value = 0;
