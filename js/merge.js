@@ -1,3 +1,4 @@
+
 let file1Data = [];
 let file2Data = [];
 let mergedResults = null;
@@ -12,32 +13,26 @@ function setExportEnabled(enabled) {
 
 setExportEnabled(false);
 
-function buildColumnDefs(rows) {
-  if (!rows || !rows.length) return [];
+/** Columns ending in "Diff" are coloured green / red like the dashboard. */
+function diffRender(value, type) {
+  if (type !== "display" || value === null || value === undefined || value === "")
+    return value ?? "";
+  const cls = Number(value) >= 0 ? "diff-positive" : "diff-negative";
+  return `<span class="${cls}">${escapeHtml(value)}</span>`;
+}
 
-  return Object.keys(rows[0]).map((key) => {
-    return {
-      headerName: key,
-      field: key,
-      flex: 1,
-      minWidth: 200,
-      sortable: true,
-      filter: false,
-      resizable: true,
-      cellRenderer: (params) => {
-        if (key.endsWith("Diff")) {
-          const val = params.value;
-          const span = document.createElement("span");
-          span.style.color = val >= 0 ? "green" : "red";
-          span.textContent = val ?? "";
-          return span;
-        }
-        return params.value ?? "";
-      },
-    };
+function renderResultsTable(rows) {
+  const gridDiv = document.querySelector("#myGrid");
+  gridDiv.style.display = "block";
+  const { keys, data } = objectsToRows(rows);
+  createSiteTable(gridDiv, {
+    columns: keys.map((k) => ({
+      title: k,
+      render: k.endsWith("Diff") ? diffRender : undefined,
+    })),
+    data,
   });
 }
-let gridApi = null;
 
 function fillSelect(selectEl, columns) {
   selectEl.replaceChildren();
@@ -47,31 +42,6 @@ function fillSelect(selectEl, columns) {
     option.textContent = col;
     selectEl.appendChild(option);
   });
-}
-
-function renderResultsAgGrid(rows) {
-  const gridDiv = document.querySelector("#myGrid");
-  gridDiv.style.display = "block";
-  const gridOptions = {
-    columnDefs: buildColumnDefs(rows),
-    rowData: rows,
-    rowHeight: 40,
-    defaultColDef: {
-      sortable: true,
-      filter: false,
-      resizable: true,
-    },
-    pagination: true,
-    paginationPageSize: 50,
-    animateRows: true,
-  };
-
-  if (!gridApi) {
-    gridApi = createThemedGrid(gridDiv, gridOptions);
-  } else {
-    gridApi.setGridOption("columnDefs", buildColumnDefs(rows));
-    gridApi.setGridOption("rowData", rows);
-  }
 }
 
 async function readExcel(file) {
@@ -178,7 +148,7 @@ async function doMerge() {
       return;
     }
 
-    renderResultsAgGrid(mergedResults);
+    renderResultsTable(mergedResults);
 
     progressEl.value = 100;
     resultsInfo.textContent = `Merged ${mergedResults.length} rows using File 1 ID "${idColumn}", File 2 ID "${sourceIdColumn}", and column "${mergeColumn}" from File 2.`;
