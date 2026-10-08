@@ -10,6 +10,15 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css"
     />
     <link rel="stylesheet" href="css/shared.css" />
+        <link
+      href="https://cdn.datatables.net/v/dt/dt-3.1.2/datatables.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.datatables.net/scroller/3.1.1/css/scroller.dataTables.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/datatable.css" />
     <link rel="stylesheet" href="css/merge.css" />
   </head>
 
@@ -100,7 +109,7 @@
           </div>
 
           <div id="merge-results-info">No merged data yet.</div>
-          <div id="myGrid" class="ag-theme-quartz" style="height: 500px"></div>
+          <div id="myGrid"></div>
         </section>
       </div>
     </main>
@@ -111,10 +120,11 @@
       </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@36.1.0/dist/ag-grid-community.min.js"></script>
+    <script src="https://cdn.datatables.net/v/dt/dt-3.1.2/datatables.min.js"></script>
+    <script src="https://cdn.datatables.net/scroller/3.1.1/js/dataTables.scroller.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <script src="js/common.js"></script>
-    <script src="js/gridTheme.js"></script>
+    <script src="js/siteTable.js"></script>
     <script src="js/exportUtils.js"></script>
     <script src="js/merge.js"></script>
   </body>
