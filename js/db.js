@@ -62,7 +62,7 @@ function dbHasTable(database, name) {
     dbGet(database, "SELECT 1 AS x FROM sqlite_master WHERE type='table' AND name=?", [name]),
   );
 }
-/
+
 function toNumericIds(values) {
   return [...new Set(values.map(normalizeNumericId).filter(Boolean))].map(Number);
 }
