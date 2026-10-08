@@ -2,8 +2,6 @@
    selectkvk.js — lists the KvKs of ?kd=… with their headline totals.
    Depends on: common.js, db.js, queries.js, sql.js.
    ========================================================================== */
-
-/** data/kvknames.json maps abbreviations to full names; keys are matched case-insensitively. */
 async function loadKvkNames() {
   try {
     const res = await fetch("data/kvknames.json");
@@ -26,7 +24,6 @@ function expandKvkName(rawName, kvkNumber, names) {
   return full ? `${numberLabel} ${full}` : rawName;
 }
 
-/** Totals of 0 or less show as a dash here. */
 function formatTotal(n) {
   return Number(n) > 0 ? formatCompact(n) : "—";
 }
