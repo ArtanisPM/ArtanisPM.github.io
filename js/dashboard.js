@@ -1,11 +1,5 @@
-/* ==========================================================================
-   dashboard.js — DKP table (DataTables), card view, podium and totals.
-   Depends on: common.js, db.js, queries.js, govModal.js, DataTables.
-   ========================================================================== */
-
+/* Depends on: common.js, db.js, queries.js, govModal.js, DataTables. */
 let table;
-
-/* ---------- export helpers & stacked cell renderers ---------- */
 
 function formatCsvPercent(value) {
   const n = Number(value);
@@ -60,8 +54,6 @@ function renderDeadsPowerDiffStack(deadsDiff, powerDiff) {
     </div>
   `;
 }
-
-/* ---------- table ---------- */
 
 function renderGovernor(row) {
   const name = escapeHtml(row.name);
@@ -410,8 +402,6 @@ async function copyTop18(e, dt, node, config) {
   }, 2000);
 }
 
-/* ---------- card view ---------- */
-
 let cardsEl = null;
 let cardMode = false;
 
@@ -463,8 +453,6 @@ function setCardMode(on) {
   }
 }
 
-/* ---------- podium & totals ---------- */
-
 function renderTopPlayers(players, dkpKey) {
   document.querySelectorAll("#top-players .player-box").forEach((box) => {
     const p = players[Number(box.dataset.rank) - 1];
@@ -488,11 +476,10 @@ function renderTotals(rows = []) {
   }
 }
 
-/* ---------- boot ---------- */
 
 async function initDashboard() {
   const spinner = document.getElementById("loading-spinner");
-  loadEquipRefData(); // used by the governor modal; loads in the background
+  loadEquipRefData();
   try {
     await openDb();
     loadKvkContext();
@@ -500,7 +487,6 @@ async function initDashboard() {
 
     initTable(rows);
 
-    // Rank the podium by the same figure the table sorts on (with farms when available).
     const dkpKey = hasSums ? "sumDkp" : "dkp";
     const top3 = [...rows].sort((a, b) => num(b[dkpKey]) - num(a[dkpKey])).slice(0, 3);
     renderTopPlayers(top3, dkpKey);
