@@ -7,8 +7,6 @@
    called skinsData / itemsData etc. without clashing.
    ========================================================================== */
 
-/* ---------- reference data (data/*.json) ---------- */
-
 const refData = {
   items: {},
   commanders: {},
@@ -20,7 +18,6 @@ const refData = {
   armTroopTypes: {},
 };
 
-/** kind -> file, and the top-level key inside that file. */
 const REF_FILES = {
   items: { url: "data/items.json", key: "items" },
   commanders: { url: "data/commanders.json", key: "commanders" },
@@ -29,7 +26,7 @@ const REF_FILES = {
   armaments: { url: "data/armaments.json", key: "armaments" },
   armTroopTypes: { url: "data/arm_troop_types.json", key: "types" },
 };
-/** What loadEquipRefData() loads when called without a list. */
+
 const DEFAULT_REF_KINDS = ["items", "commanders", "inscriptions", "skins", "armaments", "armTroopTypes"];
 const refLoads = {};
 
@@ -41,7 +38,6 @@ function normalizeArmamentKey(v) {
     .replace(/[^a-z0-9]/g, "");
 }
 
-/** Each file loads once; a broken or missing file only affects its own lookups. */
 function loadRefFile(kind) {
   refLoads[kind] ??= (async () => {
     const { url, key } = REF_FILES[kind];
@@ -57,7 +53,6 @@ function loadRefFile(kind) {
   return refLoads[kind];
 }
 
-/** loadEquipRefData() loads the usual five files; pass names to load a different set. */
 async function loadEquipRefData(kinds = DEFAULT_REF_KINDS) {
   await Promise.all(kinds.map(loadRefFile));
 
@@ -91,24 +86,18 @@ function getInscriptionInfo(name) {
 function getArmamentInfo(name) {
   return refData.armamentsByKey[normalizeArmamentKey(name)] || null;
 }
-/**
- * Armament types for a <select>: label is the full name from armaments.json
- * ("Double Line Formation"); value is the short name the database stores
- * ("Double Line"), which is also the icon file name.
- */
+
 function getArmamentTypeOptions() {
   return Object.values(refData.armaments)
     .filter((a) => a.name)
     .map((a) => ({ value: a.name.replace(/\s+Formation$/i, ""), label: a.name }));
 }
 
-/** Icon for an armament stat, from the "icon" field in data/arm_troop_types.json; null if it has none. */
 function getArmStatIconPath(statName) {
   const icon = refData.armTroopTypes[String(statName ?? "").trim()]?.icon;
   return icon ? `icons/troopico/${encodeURIComponent(icon)}.webp` : null;
 }
 
-/** Stat names for the armament stat dropdowns (data/arm_troop_types.json). */
 function getArmTroopTypeNames() {
   return Object.keys(refData.armTroopTypes);
 }
@@ -119,15 +108,7 @@ function getAllInscriptionNames() {
     .sort((a, b) => a.localeCompare(b));
 }
 
-/* ---------- armament stat slots ---------- */
-
-/** How many stat lines one armament can have (stat name + value). */
 const ARM_STAT_COUNT = 14;
-
-/**
- * Database column names for each stat slot, relative to an armament prefix such as "arm1".
- * Slot 1 is `_stat_name` / `_stat`; slot n is `_stat{n}_name{n}` / `_stat{n}`.
- */
 const ARM_STAT_DEFS = Array.from({ length: ARM_STAT_COUNT }, (_, i) => {
   const n = i + 1;
   return n === 1
@@ -135,12 +116,9 @@ const ARM_STAT_DEFS = Array.from({ length: ARM_STAT_COUNT }, (_, i) => {
     : { nameKey: `_stat${n}_name${n}`, valKey: `_stat${n}` };
 });
 
-/** [{ n: "arm1_stat_name", v: "arm1_stat" }, ...] — the full column names for one armament. */
 function armStatColumns(prefix) {
   return ARM_STAT_DEFS.map((s) => ({ n: prefix + s.nameKey, v: prefix + s.valKey }));
 }
-
-/* ---------- icons & small equipment helpers ---------- */
 
 function isEmptyVal(v) {
   if (v === null || v === undefined || v === "") return true;
@@ -192,8 +170,6 @@ function iconPath(name, kind) {
   return `icons/${folder}/${encodeURIComponent(String(name).trim().toLowerCase())}.webp`;
 }
 
-/* ---------- tooltips ---------- */
-
 const toArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
 
 function ttName(name, rarity) {
@@ -219,7 +195,6 @@ function ttDesc(desc) {
     : "";
 }
 
-/** kind: "item" | "skin" | "commander" | "armament" | "inscription" */
 function buildTooltipHtml(code, kind) {
   if (isEmptyVal(code)) return "";
   const key = String(code).trim();
