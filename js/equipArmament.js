@@ -1,24 +1,17 @@
-/* ==========================================================================
-   equipArmament.js — equipment editor: armament editor modal and inscription picker.
-   Load it before equipment.js (see equipment.html). Declarations only:
-   everything here is called later from equipment.js handlers.
-   ========================================================================== */
-
-/* ---------- dropdowns (filled from data/armaments.json and data/arm_troop_types.json) ---------- */
+/* Load it before equipment.js (see equipment.html). */
 
 function fillSelect(select, options, placeholder) {
   select.replaceChildren(new Option(placeholder, ""));
   options.forEach(({ value, label }) => select.add(new Option(label, value)));
 }
 
-/** Creates one stat row (name dropdown + value) per slot in ARM_STAT_DEFS. Runs once. */
 function buildArmStatRows() {
   const grid = document.getElementById("armStatGrid");
   if (!grid || grid.querySelector(".eq-arm-stat-row")) return;
 
   document.getElementById("armStatTitle").textContent =
     `Stats (up to ${ARM_STAT_COUNT})`;
-  // 14 rows are tall: let the list scroll instead of pushing the modal off screen.
+   
   grid.style.maxHeight = "50vh";
   grid.style.overflowY = "auto";
 
@@ -58,7 +51,6 @@ function populateArmamentSelects() {
   });
 }
 
-/** Sets a <select>; a saved value that is no longer in the list is kept as an extra option. */
 function setSelectValue(select, value) {
   if (value && ![...select.options].some((o) => o.value === value)) {
     select.add(new Option(value, value));
