@@ -1,5 +1,5 @@
 /* ==========================================================================
-   govCards.js — the "card" renderers for a governor's KvK history, account
+   govCards.js — the card renderers for a governor's KvK history, account
    boxes and farm-account KvK stats. Shared by the dashboard's governor modal
    (govModal.js) and the player card (playercard.js). Pure HTML builders.
    Depends on: common.js. Styles: css/govcards.css.
@@ -100,7 +100,6 @@ function renderAccountBoxes(accounts) {
   return `<div class="kvk-gains-grid">${boxes}</div>`;
 }
 
-/** One farm account's stats for one KvK. */
 function renderFarmKvKAccountBox(r) {
   const pct = { signed: false, format: formatPercent, full: formatPercent };
   const plain = { signed: false };
@@ -124,7 +123,6 @@ function renderFarmKvKAccountBox(r) {
     </div>`;
 }
 
-/** Farm KvK rows -> [{ kvk, html }], newest KvK first, one card grid per KvK. */
 function renderFarmKvKGroups(rows) {
   const grouped = {};
   rows.forEach((r) => {
