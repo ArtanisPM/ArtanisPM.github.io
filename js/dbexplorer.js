@@ -1,9 +1,5 @@
 "use strict";
 
-let dataGridApi = null;
-let queryGridApi = null;
-let schemaGridApis = [];
-
 let SQL = null;
 let db = null;
 
@@ -44,7 +40,6 @@ const dbxNoTable = document.getElementById("dbx-no-table");
 const dbxDataContent = document.getElementById("dbx-data-content");
 const dbxDataEmpty = document.getElementById("dbx-data-empty");
 const dbxDataGridEl = document.getElementById("dbx-data-grid");
-const dbxRowSearch = document.getElementById("dbx-row-search");
 
 const dbxSchemaContent = document.getElementById("dbx-schema-content");
 
@@ -57,25 +52,6 @@ const dbxQueryGridEl = document.getElementById("dbx-query-grid");
 let allTables = [];
 let activeTable = null;
 let tableInfoCache = {};
-let rowSearchTerm = "";
-
-const GRID_DEFAULTS = {
-  enableCellTextSelection: true,
-  ensureDomOrder: true,
-  defaultColDef: {
-    sortable: true,
-    filter: false,
-    resizable: true,
-    minWidth: 130,
-    flex: 1,
-  },
-  tooltipShowDelay: 300,
-  pagination: true,
-  paginationPageSize: 50,
-  paginationPageSizeSelector: [20, 50, 100, 200],
-  animateRows: true,
-  rowHeight: 42,
-};
 
 dbxDrop.addEventListener("click", () => dbxFileInput.click());
 dbxDrop.addEventListener("dragover", (e) => {
@@ -160,12 +136,9 @@ function closeDatabase() {
   allTables = [];
   activeTable = null;
   tableInfoCache = {};
-  rowSearchTerm = "";
-  destroyDataGrid();
-  destroyQueryGrid();
-  destroySchemaGrids();
+  destroySiteTable(dbxDataGridEl);
+  destroySiteTable(dbxQueryGridEl);
   dbxSchemaContent.innerHTML = "";
-  dbxRowSearch.value = "";
   dbxFileInput.value = "";
   dbxDropSub.textContent = "No file selected";
   explorerState.style.display = "none";
@@ -228,8 +201,6 @@ dbxTableFilter.addEventListener("input", renderTableList);
 
 function selectTable(name) {
   activeTable = name;
-  rowSearchTerm = "";
-  dbxRowSearch.value = "";
   renderTableList();
   dbxNoTable.style.display = "none";
   dbxDataContent.style.display = "block";
@@ -251,6 +222,9 @@ function switchTab(tab) {
     el.classList.toggle("active", key === tab),
   );
   if (tab === "schema") renderSchemaForActive();
+  // tables built while their tab was hidden need re-measuring
+  if (tab === "data") refreshSiteTable(dbxDataGridEl);
+  if (tab === "query") refreshSiteTable(dbxQueryGridEl);
 }
 
 function getTableInfo(name) {
@@ -270,24 +244,6 @@ function getTableInfo(name) {
   return cols;
 }
 
-function destroyGrid(el, api) {
-  if (api) {
-    try {
-      api.destroy();
-    } catch (e) {
-      showToast(`Failed to destroy grid: ${e.message}`, "error");
-    }
-  }
-  if (el) el.classList.remove("visible");
-  return null;
-}
-function destroyDataGrid() {
-  dataGridApi = destroyGrid(dbxDataGridEl, dataGridApi);
-}
-function destroyQueryGrid() {
-  queryGridApi = destroyGrid(dbxQueryGridEl, queryGridApi);
-}
-
 function formatCellNumber(value) {
   return value.toLocaleString("en-US", { maximumFractionDigits: 20 });
 }
@@ -305,33 +261,28 @@ function isIdColumn(field) {
   return !!field && ID_COLUMN_NAMES.has(String(field).toLowerCase());
 }
 
-function dbxCellRenderer(params) {
-  const val = params.value;
-  if (val === null || val === undefined) {
-    const span = document.createElement("span");
-    span.className = "dbx-cell-null";
-    span.textContent = "NULL";
-    return span;
-  }
-  if (val instanceof Uint8Array) {
-    return `<BLOB ${val.length}b>`;
-  }
-  if (typeof val === "number" && !isIdColumn(params.colDef?.field)) {
-    return formatCellNumber(val);
-  }
-  return String(val);
-}
-function dbxTooltipValueGetter(params) {
-  const val = params.value;
+/** Plain-text form of a cell value (used for display after escaping). */
+function dbxFormatCell(val, col) {
   if (val === null || val === undefined) return "NULL";
   if (val instanceof Uint8Array) return `<BLOB ${val.length}b>`;
-  if (typeof val === "number" && !isIdColumn(params.colDef?.field)) {
-    return formatCellNumber(val);
-  }
+  if (typeof val === "number" && !isIdColumn(col)) return formatCellNumber(val);
   return String(val);
 }
 
-function buildColumnDefs(columns, colInfo) {
+/** DataTables render function for one column: HTML for display, raw value for sort/search. */
+function dbxRender(col) {
+  return (val, type) => {
+    if (type === "display") {
+      if (val === null || val === undefined)
+        return '<span class="dbx-cell-null">NULL</span>';
+      return escapeHtml(dbxFormatCell(val, col));
+    }
+    if (val === null || val === undefined) return "";
+    return val instanceof Uint8Array ? dbxFormatCell(val, col) : val;
+  };
+}
+
+function buildTableColumns(columns, colInfo) {
   const typeMap = {};
   const pkSet = new Set();
   (colInfo || []).forEach((c) => {
@@ -339,33 +290,16 @@ function buildColumnDefs(columns, colInfo) {
     if (c.pk) pkSet.add(c.name);
   });
   return columns.map((name) => ({
-    field: name,
-    headerName: pkSet.has(name) ? `${name}` : name,
-    headerTooltip: typeMap[name] ? `${name} — ${typeMap[name]}` : name,
-    cellClass: (p) => {
-      const classes = [];
-      if (pkSet.has(name)) classes.push("dbx-pk-cell");
-      if (typeof p.value === "number" && !isIdColumn(name)) {
-        classes.push("dbx-num-cell");
-      }
-      return classes;
-    },
-    cellRenderer: dbxCellRenderer,
-    tooltipValueGetter: dbxTooltipValueGetter,
+    title: name,
+    titleHtml: `<span title="${escapeAttr(typeMap[name] ? `${name} — ${typeMap[name]}` : name)}">${escapeHtml(name)}</span>`,
+    render: dbxRender(name),
+    className: pkSet.has(name) ? "dbx-pk-cell" : undefined,
   }));
-}
-
-function rowsToObjects(columns, values) {
-  return values.map((row) => {
-    const obj = {};
-    columns.forEach((c, i) => (obj[c] = row[i]));
-    return obj;
-  });
 }
 
 function renderDataTab() {
   if (!activeTable) return;
-  destroyDataGrid();
+  destroySiteTable(dbxDataGridEl);
   dbxDataGridEl.style.display = "none";
   dbxDataEmpty.style.display = "none";
 
@@ -387,51 +321,16 @@ function renderDataTab() {
     return;
   }
 
-  const columnDefs = buildColumnDefs(result.columns, cols);
-  const rowData = rowsToObjects(result.columns, result.values);
-
   dbxDataGridEl.style.display = "block";
-  dataGridApi = createThemedGrid(dbxDataGridEl, {
-    ...GRID_DEFAULTS,
-    columnDefs,
-    rowData,
-    quickFilterText: rowSearchTerm,
+  createSiteTable(dbxDataGridEl, {
+    columns: buildTableColumns(result.columns, cols),
+    data: result.values,
   });
-  requestAnimationFrame(() => dbxDataGridEl.classList.add("visible"));
 }
 
-dbxRowSearch.addEventListener("input", () => {
-  rowSearchTerm = dbxRowSearch.value.trim();
-  if (dataGridApi) {
-    dataGridApi.setGridOption("quickFilterText", rowSearchTerm);
-  }
-});
-
-function createStaticGrid(el, columnDefs, rowData) {
-  const api = createThemedGrid(el, {
-    columnDefs,
-    rowData,
-    domLayout: "autoHeight",
-    defaultColDef: { resizable: true, sortable: false, flex: 1 },
-    enableCellTextSelection: true,
-  });
-  requestAnimationFrame(() => el.classList.add("visible"));
-  return api;
-}
-
-function destroySchemaGrids() {
-  schemaGridApis.forEach((api) => {
-    try {
-      api.destroy();
-    } catch (e) {
-      showToast(`Failed to destroy schema grid: ${e.message}`, "error");
-    }
-  });
-  schemaGridApis = [];
-}
 
 function renderSchemaForActive() {
-  destroySchemaGrids();
+  dbxSchemaContent.querySelectorAll(".dbx-schema-grid").forEach(destroySiteTable);
 
   if (!activeTable) {
     dbxSchemaContent.innerHTML = `<div class="dbx-empty-hint">Select a table on the left to see its schema.</div>`;
@@ -460,87 +359,59 @@ function renderSchemaForActive() {
   dbxSchemaContent.innerHTML = `
     <div class="dbx-schema-table">
       <h3>${escapeHtml(activeTable)} <span class="dbx-row-badge">${cols.length} column${cols.length === 1 ? "" : "s"}</span></h3>
-      <div id="dbx-schema-columns-grid" class="dbx-ag-grid dbx-ag-grid--auto ag-theme-quartz"></div>
+      <div id="dbx-schema-columns-grid" class="dbx-schema-grid"></div>
     </div>
     ${
       fks.length
-        ? `<div class="dbx-schema-table"><h3>Foreign keys</h3><div id="dbx-schema-fks-grid" class="dbx-ag-grid dbx-ag-grid--auto ag-theme-quartz"></div></div>`
+        ? `<div class="dbx-schema-table"><h3>Foreign keys</h3><div id="dbx-schema-fks-grid" class="dbx-schema-grid"></div></div>`
         : ""
     }
     ${
       indexes.length
-        ? `<div class="dbx-schema-table"><h3>Indexes</h3><div id="dbx-schema-idx-grid" class="dbx-ag-grid dbx-ag-grid--auto ag-theme-quartz"></div></div>`
+        ? `<div class="dbx-schema-table"><h3>Indexes</h3><div id="dbx-schema-idx-grid" class="dbx-schema-grid"></div></div>`
         : ""
     }
     ${createSql ? `<div class="dbx-schema-table"><h3>CREATE statement</h3><div class="dbx-create-sql">${escapeHtml(createSql)}</div></div>` : ""}
   `;
 
-  const columnsGridEl = document.getElementById("dbx-schema-columns-grid");
-  schemaGridApis.push(
-    createStaticGrid(
-      columnsGridEl,
-      [
-        {
-          headerName: "Column",
-          field: "name",
-          flex: 1.4,
-          cellRenderer: (p) =>
-            p.data.pk
-              ? `${escapeHtml(p.value)}<span class="dbx-pk-badge">PK</span>`
-              : escapeHtml(p.value),
-        },
-        {
-          headerName: "Type",
-          field: "type",
-          valueFormatter: (p) => p.value || "—",
-        },
-        {
-          headerName: "Constraint",
-          field: "notnull",
-          valueFormatter: (p) => (p.value ? "NOT NULL" : ""),
-        },
-        {
-          headerName: "Default",
-          field: "dflt",
-          valueFormatter: (p) => (p.value === null ? "" : String(p.value)),
-        },
-      ],
-      cols,
-    ),
+  const text = (v, type) => (type === "display" ? escapeHtml(v ?? "") : (v ?? ""));
+  const plainTable = (id, columns, data) =>
+    createSiteTable(document.getElementById(id), {
+      plain: true,
+      columns: columns.map((c) => ({ orderable: false, render: text, ...c })),
+      data,
+    });
+
+  plainTable(
+    "dbx-schema-columns-grid",
+    [
+      {
+        title: "Column",
+        render: (v, type, row) =>
+          type === "display"
+            ? escapeHtml(v) + (row[4] ? '<span class="dbx-pk-badge">PK</span>' : "")
+            : v,
+      },
+      { title: "Type", render: (v, type) => (type === "display" ? escapeHtml(v || "—") : v) },
+      { title: "Constraint", render: (v, type) => (type === "display" && v ? "NOT NULL" : "") },
+      { title: "Default", render: (v, type) => (type === "display" && v !== null ? escapeHtml(String(v)) : "") },
+    ],
+    cols.map((c) => [c.name, c.type, c.notnull, c.dflt, c.pk]),
   );
 
   if (fks.length) {
-    const fksGridEl = document.getElementById("dbx-schema-fks-grid");
-    schemaGridApis.push(
-      createStaticGrid(
-        fksGridEl,
-        [
-          { headerName: "Column", field: "from" },
-          {
-            headerName: "References",
-            valueGetter: (p) => `${p.data.table}.${p.data.to}`,
-          },
-        ],
-        fks,
-      ),
+    plainTable(
+      "dbx-schema-fks-grid",
+      [{ title: "Column" }, { title: "References" }],
+      fks.map((f) => [f.from, `${f.table}.${f.to}`]),
     );
   }
 
   if (indexes.length) {
-    const idxGridEl = document.getElementById("dbx-schema-idx-grid");
-    schemaGridApis.push(
-      createStaticGrid(
-        idxGridEl,
-        [
-          { headerName: "Name", field: "name", flex: 1.5 },
-          {
-            headerName: "Unique",
-            field: "unique",
-            valueFormatter: (p) => (p.value ? "Yes" : "No"),
-          },
-        ],
-        indexes,
-      ),
+    plainTable(
+      "dbx-schema-idx-grid",
+      [{ title: "Name" }, { title: "Unique", render: (v, type) => (type === "display" ? (v ? "Yes" : "No") : v) }],
+      indexes.map((i) => [i.name, i.unique]),
     );
   }
 }
@@ -557,7 +428,7 @@ dbxSqlInput.addEventListener("keydown", (e) => {
 function runUserQuery() {
   const sql = dbxSqlInput.value.trim();
   dbxQueryError.style.display = "none";
-  destroyQueryGrid();
+  destroySiteTable(dbxQueryGridEl);
   dbxQueryGridEl.style.display = "none";
   dbxQueryEmpty.style.display = "none";
   dbxQueryEmpty.innerHTML = "";
@@ -596,12 +467,10 @@ function runUserQuery() {
     }
 
     dbxQueryGridEl.style.display = "block";
-    queryGridApi = createThemedGrid(dbxQueryGridEl, {
-      ...GRID_DEFAULTS,
-      columnDefs: buildColumnDefs(columns, []),
-      rowData: rowsToObjects(columns, values),
+    createSiteTable(dbxQueryGridEl, {
+      columns: buildTableColumns(columns, []),
+      data: values,
     });
-    requestAnimationFrame(() => dbxQueryGridEl.classList.add("visible"));
   } catch (e) {
     showQueryError(e.message || String(e));
   }
