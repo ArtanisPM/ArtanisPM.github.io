@@ -1,4 +1,8 @@
-/* Load it before equipment.js (see equipment.html). */
+/* ==========================================================================
+   equipArmament.js — equipment editor: armament editor modal and inscription picker.
+   Load it before equipment.js (see equipment.html). Declarations only:
+   everything here is called later from equipment.js handlers.
+   ========================================================================== */
 
 function fillSelect(select, options, placeholder) {
   select.replaceChildren(new Option(placeholder, ""));
