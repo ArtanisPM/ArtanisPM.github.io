@@ -5,6 +5,8 @@
   margin: 0;
   padding: 0;
 }
+/* Theme palette — declared once with light-dark(). Follows the OS until the
+   user picks a theme (common.js then sets body.light / body.dark). */
 body {
   color-scheme: light dark;
   --bg-color: light-dark(#e5e5e5, #333333);
@@ -522,21 +524,6 @@ progress {
   color: var(--text-color);
   font-size: 0.875rem;
 }
-.ag-header-cell-label {
-  justify-content: center;
-}
-.ag-theme-quartz .ag-row-odd {
-  background-color: rgb(0 0 0 / 0.03);
-}
-.ag-theme-quartz .ag-row-even {
-  background-color: transparent;
-}
-body.light .ag-theme-quartz .ag-row-odd {
-  background-color: rgb(0 0 0 / 0.04);
-}
-body.dark .ag-theme-quartz .ag-row-odd {
-  background-color: rgb(255 255 255 / 0.05);
-}
 #backToTop {
   position: fixed;
   bottom: 24px;
@@ -654,6 +641,7 @@ body.dark #backToTop:hover {
   opacity: 0.75;
   font-style: italic;
 }
+/* ---------- Toast notifications (replaces alert()) ---------- */
 .toast-container {
   position: fixed;
   top: 80px;
