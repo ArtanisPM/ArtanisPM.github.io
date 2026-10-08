@@ -1,12 +1,4 @@
-/* ==========================================================================
-   common.js — helpers shared by every page.
-   Classic (non-module) script: load it first, before any page script.
-   Provides: URL/id helpers, number formatting, escapeHtml, copyText,
-   toasts, theme (+ "themechange" event) and navbar behaviour.
-   ========================================================================== */
-
-/* ---------- ids & URL params ---------- */
-
+/* Load it first, before any page script. */
 function normalizeNumericId(value) {
   const id = String(value ?? "").trim();
   return /^\d+$/.test(id) ? id : null;
@@ -19,8 +11,6 @@ function getKDFromURL() {
 function getKvkNumberFromURL() {
   return normalizeNumericId(new URLSearchParams(location.search).get("kvk"));
 }
-
-/* ---------- formatting ---------- */
 
 const num = (v) => Number(v) || 0;
 
@@ -38,7 +28,6 @@ function formatPercent(value) {
   return Number.isFinite(n) ? `${(n * 100).toFixed(2)}%` : "";
 }
 
-/** 1234567 -> "1.23M". Keeps the sign for negatives. */
 function formatCompact(value) {
   const n = Number(value) || 0;
   const abs = Math.abs(n);
@@ -71,7 +60,6 @@ function escapeHtml(str) {
   return String(str).replace(/[&<>"'`=/]/g, (s) => HTML_ESCAPES[s]);
 }
 
-/** For values placed inside HTML attributes. */
 const escapeAttr = escapeHtml;
 
 async function copyText(text) {
@@ -91,13 +79,6 @@ async function copyText(text) {
   }
 }
 
-/* ---------- sql.js ---------- */
-
-/**
- * Loads the sql.js engine once. The .wasm file is fetched from the same folder as
- * the <script src=".../sql-wasm.js"> tag on the page, so the version number only
- * lives in each page's HTML tag and the two can never drift apart.
- */
 const SQL_JS_FALLBACK_URL = "https://cdn.jsdelivr.net/npm/sql.js@1.14.2/dist/";
 let sqlJsPromise = null;
 
@@ -113,14 +94,6 @@ function getSqlJs() {
   return sqlJsPromise;
 }
 
-/* ---------- governor name search ---------- */
-
-/**
- * Finds governors by (part of) their name. `sources` is a list of
- * { db, src } objects to search, e.g. [{ db, src: "kvk" }]. Used by the
- * player card (kvk.db + scans db) and the equipment editor.
- * Returns up to 15 { id, name, src }, names starting with the query first.
- */
 function searchByName(query, sources) {
   const q = String(query ?? "").trim().toLowerCase();
   if (q.length < 2) return [];
@@ -163,8 +136,6 @@ function searchByName(query, sources) {
   });
   return results.slice(0, 15);
 }
-
-/* ---------- toasts ---------- */
 
 const TOAST_ICONS = {
   error: "fa-solid fa-circle-exclamation",
@@ -215,8 +186,6 @@ function showToast(message, type = "info", duration = 5000) {
   if (duration > 0) setTimeout(remove, duration);
 }
 
-/* ---------- theme ---------- */
-
 const THEME_KEY = "theme";
 
 function getCurrentTheme() {
@@ -225,7 +194,6 @@ function getCurrentTheme() {
   return matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
-/** Applies the theme and tells listeners (charts, grids) via "themechange". */
 function applyTheme(theme) {
   document.body.classList.remove("light", "dark");
   document.body.classList.add(theme);
@@ -244,8 +212,6 @@ function initTheme() {
     applyTheme(toggle.checked ? "dark" : "light"),
   );
 }
-
-/* ---------- navbar ---------- */
 
 function initNav() {
   const hamburger = document.getElementById("hamburger");
@@ -266,7 +232,6 @@ function initNav() {
   });
   navLinks.querySelectorAll("a").forEach((a) => a.addEventListener("click", close));
 
-  // Keep ?kd=…&kvk=… on the link that points at the current page.
   const current = location.pathname.split("/").pop();
   navLinks.querySelectorAll("a").forEach((link) => {
     if (link.getAttribute("href") === current) {
@@ -275,7 +240,6 @@ function initNav() {
   });
 }
 
-/** The "Tools" dropdown that the tool pages have in their navbar. */
 function initToolsDropdown() {
   const toggle = document.getElementById("tools-toggle");
   const menu = document.getElementById("tools-menu");
