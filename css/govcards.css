@@ -1,5 +1,3 @@
-/* governor "cards": KvK gains, account boxes and farm KvK boxes.
-   Used by the dashboard's governor modal and by the player card. */
 .kvk-gains-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
