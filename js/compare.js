@@ -1,4 +1,3 @@
-
 let comparedResults = { matching: [], nonMatching: [] };
 const progressEl = document.getElementById("progressBar");
 const resultsInfo = document.getElementById("compare-results-info");
