@@ -1,3 +1,4 @@
+
 let comparedResults = { matching: [], nonMatching: [] };
 const progressEl = document.getElementById("progressBar");
 const resultsInfo = document.getElementById("compare-results-info");
@@ -87,69 +88,30 @@ function compareData(df1, df2, keyColumn, option) {
   return { matching, nonMatching };
 }
 
-let matchingGridApi = null;
-let nonMatchingGridApi = null;
-function buildDynamicColumnDefs(rows) {
-  if (!rows || !rows.length) return [];
-
-  return Object.keys(rows[0]).map((key) => ({
-    headerName: key,
-    field: key,
-    flex: 1,
-    minWidth: 200,
-    sortable: true,
-    filter: false,
-    resizable: true,
-  }));
-}
-function createCompareGrid(containerId, rowData) {
-  const columnDefs = buildDynamicColumnDefs(rowData);
-  const gridOptions = {
-    columnDefs,
-    rowData,
-    defaultColDef: {
-      sortable: true,
-      filter: false,
-      resizable: true,
-    },
-    animateRows: true,
-    pagination: true,
-    paginationPageSize: 50,
-  };
-
-  const gridDiv = document.getElementById(containerId);
-  gridDiv.style.display = "block";
-  if (gridDiv.__agGridInstance) {
-    gridDiv.__agGridInstance.destroy();
+function renderCompareTable(containerId, label, rows, emptyText) {
+  const el = document.getElementById(containerId);
+  el.style.display = "block";
+  if (!rows.length) {
+    destroySiteTable(el);
+    el.innerHTML = `<div class="muted">${emptyText}</div>`;
+    return;
   }
-
-  const api = createThemedGrid(gridDiv, gridOptions);
-  gridDiv.__agGridInstance = api;
-
-  return api;
+  const { keys, data } = objectsToRows(rows);
+  createSiteTable(el, {
+    title: `${label} (${rows.length.toLocaleString()} rows)`,
+    columns: keys.map((k) => ({ title: k })),
+    data,
+  });
 }
 
 function renderResultsGrids(matchingRows, nonMatchingRows) {
-  if (matchingRows.length) {
-    document.getElementById("matching-table").innerHTML =
-      `<p>Matching table.</p>`;
-    matchingGridApi = createCompareGrid("matching-table", matchingRows);
-  } else {
-    document.getElementById("matching-table").innerHTML =
-      `<div class="muted">No matching rows.</div>`;
-  }
-
-  if (nonMatchingRows.length) {
-    document.getElementById("nonmatching-table").innerHTML =
-      `<p>Non matching table.</p>`;
-    nonMatchingGridApi = createCompareGrid(
-      "nonmatching-table",
-      nonMatchingRows,
-    );
-  } else {
-    document.getElementById("nonmatching-table").innerHTML =
-      `<div class="muted">No non-matching rows.</div>`;
-  }
+  renderCompareTable("matching-table", "Matching rows", matchingRows, "No matching rows.");
+  renderCompareTable(
+    "nonmatching-table",
+    "Non-matching rows",
+    nonMatchingRows,
+    "No non-matching rows.",
+  );
 }
 
 document.getElementById("compareBtn").addEventListener("click", async () => {
