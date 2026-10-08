@@ -1,12 +1,8 @@
-/* ==========================================================================
-   db.js — loads kvk.db once per page (sql.js) and offers small query helpers.
-   Depends on: common.js (getSqlJs), sql.js.
+/* Depends on: common.js (getSqlJs), sql.js.
    Every page that needs the database uses the SAME url (kvk.db?v=…) so the
-   browser downloads it once, and bumping DB_VERSION busts the cache everywhere.
-   ========================================================================== */
+   browser downloads it once, and bumping DB_VERSION busts the cache everywhere. */
 
 const DB_VERSION = "13";
-/** KvKs from this number on have "sum_*" (own + farm accounts) columns. */
 const FIRST_KVK_WITH_SUMS = 8;
 
 let db = null;
@@ -23,13 +19,12 @@ function openDb() {
       return db;
     })();
     dbPromise.catch(() => {
-      dbPromise = null; // allow a retry
+      dbPromise = null;
     });
   }
   return dbPromise;
 }
 
-/** Older kvk.db files lack the sum_* columns. Can be dropped once the DB build adds them. */
 function ensureStatsSchema(database) {
   const cols = database.exec("PRAGMA table_info(stats)");
   const existing = new Set(cols.length ? cols[0].values.map((r) => r[1]) : []);
@@ -43,7 +38,6 @@ function ensureStatsSchema(database) {
   });
 }
 
-/** Prepared-statement query -> array of row objects keyed by column name/alias. */
 function dbAll(database, sql, params = []) {
   const stmt = database.prepare(sql);
   try {
@@ -65,8 +59,7 @@ function dbHasTable(database, name) {
     dbGet(database, "SELECT 1 AS x FROM sqlite_master WHERE type='table' AND name=?", [name]),
   );
 }
-
-/** Unique numeric ids as Numbers, ready for `IN (${sqlPlaceholders(n)})`. */
+/
 function toNumericIds(values) {
   return [...new Set(values.map(normalizeNumericId).filter(Boolean))].map(Number);
 }
