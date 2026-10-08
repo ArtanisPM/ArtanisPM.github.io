@@ -1,6 +1,9 @@
-/* Depends on: common.js (getSqlJs), sql.js.
+/* ==========================================================================
+   db.js — loads kvk.db once per page (sql.js) and offers small query helpers.
+   Depends on: common.js (getSqlJs), sql.js.
    Every page that needs the database uses the SAME url (kvk.db?v=…) so the
-   browser downloads it once, and bumping DB_VERSION busts the cache everywhere. */
+   browser downloads it once, and bumping DB_VERSION busts the cache everywhere.
+   ========================================================================== */
 
 const DB_VERSION = "13";
 const FIRST_KVK_WITH_SUMS = 8;
