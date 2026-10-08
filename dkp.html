@@ -9,6 +9,15 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css"
     />
     <link rel="stylesheet" href="css/shared.css" />
+        <link
+      href="https://cdn.datatables.net/v/dt/dt-3.1.2/datatables.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.datatables.net/scroller/3.1.1/css/scroller.dataTables.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/datatable.css" />
     <link rel="stylesheet" href="css/dkp.css" />
   </head>
   <body>
@@ -136,11 +145,7 @@
         <section class="card">
           <h2>Power Ranges (Min → Max optional → %)</h2>
           <div id="power-ranges-wrap">
-            <div
-              id="power-table"
-              class="ag-theme-quartz"
-              style="height: 429px"
-            ></div>
+            <div id="power-table"></div>
 
             <div class="put-in-row">
               <input
@@ -232,11 +237,7 @@
         <section class="card">
           <h2>Results</h2>
           <div id="results-info" class="muted">No results yet.</div>
-          <div
-            id="result-table"
-            class="ag-theme-quartz"
-            style="height: 500px"
-          ></div>
+          <div id="result-table"></div>
         </section>
       </div>
     </main>
@@ -247,12 +248,13 @@
       </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@36.1.0/dist/ag-grid-community.min.js"></script>
+    <script src="https://cdn.datatables.net/v/dt/dt-3.1.2/datatables.min.js"></script>
+    <script src="https://cdn.datatables.net/scroller/3.1.1/js/dataTables.scroller.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sql.js@1.14.2/dist/sql-wasm.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     <script src="js/common.js"></script>
-    <script src="js/gridTheme.js"></script>
+    <script src="js/siteTable.js"></script>
     <script src="js/exportUtils.js"></script>
     <script src="js/dkp.js"></script>
   </body>
