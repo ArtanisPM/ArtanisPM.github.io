@@ -1,4 +1,3 @@
-
 let file1Data = [];
 let file2Data = [];
 let mergedResults = null;
@@ -13,7 +12,6 @@ function setExportEnabled(enabled) {
 
 setExportEnabled(false);
 
-/** Columns ending in "Diff" are coloured green / red like the dashboard. */
 function diffRender(value, type) {
   if (type !== "display" || value === null || value === undefined || value === "")
     return value ?? "";
