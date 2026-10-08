@@ -9,6 +9,15 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css"
     />
     <link rel="stylesheet" href="css/shared.css" />
+        <link
+      href="https://cdn.datatables.net/v/dt/dt-3.1.2/datatables.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.datatables.net/scroller/3.1.1/css/scroller.dataTables.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/datatable.css" />
     <link rel="stylesheet" href="css/dbexplorer.css" />
   </head>
   <body>
@@ -133,20 +142,6 @@
                   <p>Select a table from the left to view its rows.</p>
                 </div>
                 <div id="dbx-data-content" style="display: none">
-                  <div class="dbx-data-toolbar">
-                    <div class="dbx-search-wrap">
-                      <i
-                        class="fa-solid fa-magnifying-glass"
-                        style="font-size: 13px"
-                      ></i>
-                      <input
-                        type="text"
-                        id="dbx-row-search"
-                        placeholder="Search visible columns…"
-                        autocomplete="off"
-                      />
-                    </div>
-                  </div>
                   <div
                     id="dbx-data-empty"
                     class="dbx-empty-hint"
@@ -154,7 +149,7 @@
                   ></div>
                   <div
                     id="dbx-data-grid"
-                    class="dbx-ag-grid ag-theme-quartz"
+                    
                     style="display: none"
                   ></div>
                 </div>
@@ -195,7 +190,7 @@
                 ></div>
                 <div
                   id="dbx-query-grid"
-                  class="dbx-ag-grid ag-theme-quartz"
+                  
                   style="display: none"
                 ></div>
               </div>
@@ -212,9 +207,10 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/sql.js@1.14.2/dist/sql-wasm.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@36.1.0/dist/ag-grid-community.min.js"></script>
+    <script src="https://cdn.datatables.net/v/dt/dt-3.1.2/datatables.min.js"></script>
+    <script src="https://cdn.datatables.net/scroller/3.1.1/js/dataTables.scroller.min.js"></script>
     <script src="js/common.js"></script>
-    <script src="js/gridTheme.js"></script>
+    <script src="js/siteTable.js"></script>
     <script src="js/dbexplorer.js"></script>
   </body>
 </html>
