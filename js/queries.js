@@ -4,7 +4,6 @@
    Depends on: common.js, db.js. Call `await openDb()` first.
    ========================================================================== */
 
-/** The KvK the dashboard is showing; filled by loadKvkContext(). */
 const kvkCtx = {
   kd: null,
   kvkId: null,
@@ -15,8 +14,6 @@ const kvkCtx = {
 };
 
 const NOT_ON_VACATION = "upper(coalesce(s.vacation, 'NO')) != 'YES'";
-
-/* ---------- kingdom / KvK selection ---------- */
 
 function listKvks(kd) {
   return dbAll(
@@ -40,7 +37,6 @@ function listKvks(kd) {
   );
 }
 
-/** Resolves ?kd=&kvk= into kvkCtx. Throws an Error with a user-facing message. */
 function loadKvkContext() {
   const kd = getKDFromURL();
   if (!kd) throw new Error("Invalid or missing kingdom ID");
@@ -81,8 +77,6 @@ function loadKvkContext() {
   return kvkCtx;
 }
 
-/* ---------- dashboard grid ---------- */
-
 function loadDashboardRows() {
   return dbAll(
     db,
@@ -115,7 +109,6 @@ function loadDashboardRows() {
   );
 }
 
-/** One governor's per-snapshot diffs for the current KvK (modal chart). */
 function loadGovernorSeries(govId) {
   return dbAll(
     db,
@@ -133,8 +126,6 @@ function loadGovernorSeries(govId) {
     [String(govId), kvkCtx.kvkId],
   );
 }
-
-/* ---------- farm accounts ---------- */
 
 function resolveFarmMainId(govId) {
   const safe = normalizeNumericId(govId);
@@ -191,8 +182,6 @@ function loadFarmOwner(govId) {
 function getGovernorFarmIds(govId) {
   return loadGovernorFarms(govId).map((farm) => farm.id);
 }
-
-/* ---------- governor history (one row per KvK) ---------- */
 
 const HISTORY_SUM_FIELDS = [
   "powerDiff",
@@ -266,7 +255,6 @@ function loadGovHistory(govId, kd = kvkCtx.kd) {
   });
 }
 
-/** Farm accounts' stats for every KvK of `kd` (grouped by the caller). */
 function loadFarmKvKStats(farmIds, kd = kvkCtx.kd) {
   const ids = toNumericIds(farmIds);
   if (!ids.length || !kd) return [];
@@ -288,8 +276,6 @@ function loadFarmKvKStats(farmIds, kd = kvkCtx.kd) {
     [kd, kd, ...ids],
   ).map((r) => ({ ...r, kvk: `KvK ${r.kvkNumber}` }));
 }
-
-/* ---------- equipment / profile (tables may be missing in older DBs) ---------- */
 
 const PLAYER_TABLES = new Set(["equipment", "armaments", "skins"]);
 
