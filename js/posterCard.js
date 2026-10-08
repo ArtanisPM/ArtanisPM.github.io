@@ -6,9 +6,7 @@
    ========================================================================== */
 
 const POSTER_W = 860;
-
 const POSTER_PAD_X = 40;
-
 const POSTER_RARITY_COLORS = {
   gray: "#8a8a8a",
   green: "#4caf50",
