@@ -1,5 +1,3 @@
-/* DataTables (+ Scroller + search) look shared by the dashboard and the tool pages.
-   Put class "dt-wrap" on the element that holds the table. */
 .shared-style-btn {
   display: inline-flex;
   align-items: center;
@@ -101,7 +99,6 @@
   background:
     linear-gradient(var(--row-hover-bg), var(--row-hover-bg)), var(--table-bg);
 }
-/* table title + small static tables */
 .dt-wrap .dt-title {
   font-weight: 600;
   margin: 14px 0 8px;
