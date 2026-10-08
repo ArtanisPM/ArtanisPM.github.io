@@ -1,4 +1,3 @@
-
 let file1Data = [];
 let file2Data = [];
 let mergedResults = null;
