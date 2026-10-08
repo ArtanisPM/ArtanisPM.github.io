@@ -1,5 +1,3 @@
-
-/** kvk.db plus the optional scans db; results are tagged with where they came from. */
 function searchPlayers(query) {
   return searchByName(query, [
     { db, src: "kvk" },
@@ -325,7 +323,6 @@ function renderHistoryCards(rows) {
     : `<div class="pc-empty">No historical KvK data found.</div>`;
 }
 
-/** One collapsible group per KvK (newest first, newest open), cards inside. */
 function renderFarmKvKCards(rows) {
   const container = document.getElementById("pc-farm-kvk-table");
   container.innerHTML = renderFarmKvKGroups(rows)
