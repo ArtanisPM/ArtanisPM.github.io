@@ -1249,7 +1249,6 @@ body.dark .eq-arm-stat-tag {
   opacity: 0.35;
   font-style: italic;
 }
-/* Footer */
 .eq-arm-modal-footer {
   display: flex;
   gap: 10px;
@@ -1361,7 +1360,7 @@ body.dark .eq-arm-stat-tag {
   position: fixed;
   inset: 0;
   background: rgb(0 0 0 / 0.65);
-  z-index: 1600; /* above armament modal overlay at 1400 */
+  z-index: 1600;
   align-items: center;
   justify-content: center;
 }
