@@ -1,17 +1,3 @@
-/* ==========================================================================
-   siteTable.js — DataTables tables (with the Scroller plugin and the search
-   box) styled like the dashboard. Used by compare, merge, dkp and dbexplorer.
-   Depends on: common.js (escapeHtml), jQuery-free DataTables 3 + Scroller.
-   Styles: css/datatable.css (the container needs class "dt-wrap").
-
-   createSiteTable(container, {
-     columns: [{ title, titleHtml?, render?, className?, orderable? }],
-     data:    [[cell, cell, ...], ...]      // arrays, so column names may contain dots
-     title?, height? = "520px", order? = [], search? = true,
-     plain?   // small static table: no scrolling, search or paging
-   })
-   ========================================================================== */
-
 const siteTables = new WeakMap();
 
 function destroySiteTable(container) {
@@ -27,7 +13,6 @@ function destroySiteTable(container) {
   container.replaceChildren();
 }
 
-/** Call after a hidden table becomes visible (e.g. its tab is opened). */
 function refreshSiteTable(container) {
   const dt = siteTables.get(container);
   if (!dt) return;
@@ -39,7 +24,6 @@ function refreshSiteTable(container) {
   }
 }
 
-/** Every key used by any row, in order of first appearance. */
 function collectKeys(rows) {
   const keys = [];
   const seen = new Set();
@@ -53,7 +37,6 @@ function collectKeys(rows) {
   return keys;
 }
 
-/** [{a:1},{b:2}] -> { keys, data: [[1,null],[null,2]] } */
 function objectsToRows(rows, keys = collectKeys(rows)) {
   return { keys, data: rows.map((r) => keys.map((k) => r[k] ?? null)) };
 }
