@@ -171,7 +171,7 @@ CREATE TABLE IF NOT EXISTS farm_accounts (
 );
 `;
 
-/** CREATE TABLE for armaments, built from the slot definitions (armour slots x inscriptions x stats). */
+/* CREATE TABLE for armaments, built from the slot definitions (armour slots x inscriptions x stats). */
 function buildArmamentsTableSql(armCount = ARM_COUNT) {
   const cols = ["player_id INTEGER PRIMARY KEY", "name TEXT"];
   for (let n = 1; n <= armCount; n++) {
