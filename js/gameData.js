@@ -1,6 +1,6 @@
 /* ==========================================================================
    gameData.js — Rise of Kingdoms reference data shared by the dashboard modal,
-   the player card and the equipment editor: data/*.json loading, lookups,
+   the player card and the equipment editor: data, .json loading, lookups,
    icon paths, small equipment helpers and hover tooltips.
    Depends on: common.js (escapeHtml).
    Everything lives behind `refData` so pages can keep their own variables
