@@ -1,6 +1,6 @@
 /* ==========================================================================
    common.js — helpers shared by every page.
-   Classic (non-module) script: load it first, before any page script.
+   Load it first, before any page script.
    Provides: URL/id helpers, number formatting, escapeHtml, copyText,
    toasts, theme (+ "themechange" event) and navbar behaviour.
    ========================================================================== */
