@@ -1,4 +1,7 @@
-/* Depends on: common.js, db.js, queries.js, govModal.js, DataTables. */
+/* ==========================================================================
+   dashboard.js — DKP table (DataTables), card view, podium and totals.
+   Depends on: common.js, db.js, queries.js, govModal.js, DataTables.
+   ========================================================================== */
 let table;
 
 function formatCsvPercent(value) {
