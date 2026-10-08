@@ -4,8 +4,6 @@
    Depends on: common.js, queries.js, govCards.js, equipView.js, Chart.js.
    ========================================================================== */
 
-/* ---------- chart ---------- */
-
 let inlineChart = null;
 
 const CHART_STYLES = {
@@ -116,7 +114,6 @@ function applyChartTheme() {
 
 window.addEventListener("themechange", applyChartTheme);
 
-/** Loads this governor's snapshots on demand and (re)draws the modal chart. */
 function updateChart(governorId) {
   const canvas = document.querySelector("#modal-chart");
   if (!canvas) return;
@@ -132,8 +129,6 @@ function updateChart(governorId) {
     buildChartDatasets(series),
   );
 }
-
-/* ---------- collapsible sections & tabs ---------- */
 
 function renderCollapsibleSection(title, content, defaultOpen = false) {
   const id =
@@ -201,8 +196,6 @@ function toggleSection(id) {
   }
 }
 
-/* ---------- statistics tab ---------- */
-
 function renderFarmOwnerInfo(owner) {
   if (!owner) return "";
   return renderCollapsibleSection(
@@ -236,8 +229,6 @@ function renderFarmKvKBoxes(rows) {
     false,
   );
 }
-
-/* ---------- open / close ---------- */
 
 function openGovModal(govId, govName) {
   const overlay = document.getElementById("govModalOverlay");
